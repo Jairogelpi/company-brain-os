@@ -2,12 +2,19 @@
  * OCR and document processing pipeline.
  *
  * Tesseract.js for images (OCR). Text extraction for documents.
- * In production, add Whisper (via Ollama or API) for audio/video transcription.
+ * Audio/video → real transcription via the injectable `TranscriptionService`
+ * seam (whisper.cpp default, cloud fallback, explicit unavailability).
  */
 
 import { createWorker } from "tesseract.js";
 import { join } from "path";
 import { readFile } from "fs/promises";
+import {
+	type TranscriptionResult,
+	type TranscriptionService,
+	TranscriptionError,
+	transcriptionService,
+} from "./transcription";
 
 const UPLOAD_DIR = join(process.cwd(), "uploads");
 
@@ -25,16 +32,30 @@ export type ProcessingResult = {
 };
 
 /**
+ * Map a `TranscriptionResult` to the `processFile` media-branch output.
+ * Empty text (silent audio) is returned as `method: "text"` with an empty
+ * string — the caller (worker) decides whether to mark the job `completed`
+ * with the no-speech marker (AC-7).
+ */
+function toOcrResult(r: TranscriptionResult): ProcessingResult {
+	return { text: r.text, method: "text", confidence: r.confidence };
+}
+
+/**
  * Process an uploaded file and extract text content.
  *
  * Images → OCR via Tesseract.js
  * Text/markdown → direct read
  * PDF → OCR (first page) via Tesseract
- * Video/audio → stub (Whisper integration point)
+ * Video/audio → real transcription via `service` (default: module singleton)
+ *
+ * The optional `service` argument is the provider-seam injection point so
+ * tests can mock the transcription boundary without touching `fetch`.
  */
 export async function processFile(
 	filename: string,
 	mimeType: string,
+	service: TranscriptionService = transcriptionService,
 ): Promise<ProcessingResult> {
 	const filePath = join(UPLOAD_DIR, filename);
 	const lower = filename.toLowerCase();
@@ -66,13 +87,21 @@ export async function processFile(
 		return { text: buffer.toString("utf-8"), method: "text", confidence: 100 };
 	}
 
-	// Video/audio: stub for Whisper integration
+	// Video/audio: real transcription via the provider seam (AC-1, AC-2, AC-7,
+	// AC-11). Re-throw on unavailable/decode so the worker records a `failed`
+	// job — never return a placeholder string that looks like content (AC-3).
 	if (mimeType.startsWith("video/") || mimeType.startsWith("audio/")) {
-		return {
-			text: `[Transcription pending for ${filename}. Integrate Whisper via Ollama for audio/video transcription.]`,
-			method: "unsupported",
-			confidence: 0,
-		};
+		const r = await service.transcribe(filePath, mimeType);
+		if (r.provider === "unavailable") {
+			throw new TranscriptionError(
+				"unavailable",
+				"transcription provider unavailable",
+			);
+		}
+		if (r.decodeError) {
+			throw new TranscriptionError("decode", r.decodeError);
+		}
+		return toOcrResult(r);
 	}
 
 	// Unsupported: return filename as text
@@ -103,20 +132,4 @@ async function runOcr(filePath: string): Promise<OcrResult> {
 	} finally {
 		await worker.terminate();
 	}
-}
-
-/**
- * Transcribe audio/video using Whisper (via Ollama).
- * This is a stub for future integration.
- *
- * Ollama supports Whisper models:
- *   ollama pull whisper
- *   ollama run whisper <audio-file>
- */
-export async function transcribeWithWhisper(
-	_filePath: string,
-): Promise<string> {
-	// Stub: integrate Whisper via Ollama in production
-	// const response = await fetch("http://localhost:11434/api/generate", { ... });
-	return "[Transcription via Whisper not yet integrated. Ready for production deployment.]";
 }
