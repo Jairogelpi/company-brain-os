@@ -135,7 +135,10 @@ export default function LoginPage() {
 
 					<p className="mt-5 text-center text-sm text-[var(--ink-2)]">
 						New here?{" "}
-						<Link href="/register" className="font-medium text-[var(--ink)] underline-offset-4 hover:underline">
+						<Link
+							href="/register"
+							className="font-medium text-[var(--ink)] underline-offset-4 hover:underline"
+						>
 							Create account
 						</Link>
 					</p>

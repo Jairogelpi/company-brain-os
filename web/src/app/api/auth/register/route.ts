@@ -19,7 +19,10 @@ type UniqueViolation = {
 function uniqueViolationField(error: unknown): "email" | "slug" | null {
 	const err = error as UniqueViolation;
 	if (err.code !== "23505") return null;
-	if (err.constraint === "users_email_unique" || err.constraint === "users_email_idx") {
+	if (
+		err.constraint === "users_email_unique" ||
+		err.constraint === "users_email_idx"
+	) {
 		return "email";
 	}
 	if (

@@ -63,10 +63,12 @@ function makeFakeDb(opts: FakeDbOptions = {}) {
 
 async function post(body: unknown) {
 	const { POST } = await import("./route");
-	return POST(new Request("http://local/api/auth/register", {
-		method: "POST",
-		body: JSON.stringify(body),
-	}));
+	return POST(
+		new Request("http://local/api/auth/register", {
+			method: "POST",
+			body: JSON.stringify(body),
+		}),
+	);
 }
 
 const validBody = {

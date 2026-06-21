@@ -236,9 +236,7 @@ export const ingestionItems = pgTable(
 		companyId: text("company_id").notNull().default("default"),
 		source: text("source").notNull(),
 		kind: text("kind").$type<"csv" | "text">().notNull(),
-		proposal: jsonb("proposal")
-			.$type<Record<string, unknown>>()
-			.notNull(),
+		proposal: jsonb("proposal").$type<Record<string, unknown>>().notNull(),
 		status: text("status")
 			.$type<"pending" | "approved" | "rejected">()
 			.notNull()

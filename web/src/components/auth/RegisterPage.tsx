@@ -16,7 +16,9 @@ export default function RegisterPage() {
 	const [password, setPassword] = useState("");
 	const [companyName, setCompanyName] = useState("");
 	const [slug, setSlug] = useState("");
-	const [errorField, setErrorField] = useState<SignupField | "form" | null>(null);
+	const [errorField, setErrorField] = useState<SignupField | "form" | null>(
+		null,
+	);
 	const [error, setError] = useState("");
 	const [loading, setLoading] = useState(false);
 
@@ -46,7 +48,11 @@ export default function RegisterPage() {
 				error?: string;
 			};
 			setErrorField(payload.field ?? "form");
-			setError(payload.error === "Conflict" ? "Email or company slug already exists." : "Could not create account.");
+			setError(
+				payload.error === "Conflict"
+					? "Email or company slug already exists."
+					: "Could not create account.",
+			);
 			return;
 		}
 
@@ -74,7 +80,9 @@ export default function RegisterPage() {
 					<span className="flex h-7 w-7 items-center justify-center rounded-md bg-[var(--paper)] text-[13px] font-semibold text-[var(--ink)]">
 						◐
 					</span>
-					<span className="font-display text-lg font-semibold">Company Brain</span>
+					<span className="font-display text-lg font-semibold">
+						Company Brain
+					</span>
 				</div>
 
 				<div className="relative max-w-md rise">
@@ -83,21 +91,28 @@ export default function RegisterPage() {
 						Create your company brain in minutes.
 					</h1>
 					<p className="mt-5 text-sm leading-relaxed text-[var(--paper)]/60">
-						Start with a private company workspace, then map people, knowledge, and critical dependencies.
+						Start with a private company workspace, then map people, knowledge,
+						and critical dependencies.
 					</p>
 				</div>
 
-				<div className="relative eyebrow text-[var(--paper)]/40">Owner account · New company</div>
+				<div className="relative eyebrow text-[var(--paper)]/40">
+					Owner account · New company
+				</div>
 			</div>
 
 			<div className="flex items-center justify-center p-6">
 				<div className="w-full max-w-sm rise">
 					<div className="mb-8 lg:hidden">
-						<span className="font-display text-xl font-semibold">Company Brain</span>
+						<span className="font-display text-xl font-semibold">
+							Company Brain
+						</span>
 					</div>
 
 					<div className="eyebrow">Create account</div>
-					<h2 className="mt-2 font-display text-3xl font-normal">Start your workspace</h2>
+					<h2 className="mt-2 font-display text-3xl font-normal">
+						Start your workspace
+					</h2>
 					<p className="mt-1.5 text-sm text-[var(--ink-2)]">
 						You will become the owner of a new company workspace.
 					</p>
@@ -109,12 +124,46 @@ export default function RegisterPage() {
 						}}
 						className="mt-8 space-y-3"
 					>
-						<Field label="Email" value={email} onChange={setEmail} type="email" placeholder="you@company.com" autoComplete="email" error={errorField === "email"} />
-						<Field label="Password" value={password} onChange={setPassword} type="password" placeholder="Minimum 8 characters" autoComplete="new-password" error={errorField === "password"} />
-						<Field label="Company name" value={companyName} onChange={setCompanyName} type="text" placeholder="Acme Corp" autoComplete="organization" error={errorField === "companyName"} />
-						<Field label="Company slug" value={slug} onChange={setSlug} type="text" placeholder="acme-corp" autoComplete="off" error={errorField === "slug"} />
+						<Field
+							label="Email"
+							value={email}
+							onChange={setEmail}
+							type="email"
+							placeholder="you@company.com"
+							autoComplete="email"
+							error={errorField === "email"}
+						/>
+						<Field
+							label="Password"
+							value={password}
+							onChange={setPassword}
+							type="password"
+							placeholder="Minimum 8 characters"
+							autoComplete="new-password"
+							error={errorField === "password"}
+						/>
+						<Field
+							label="Company name"
+							value={companyName}
+							onChange={setCompanyName}
+							type="text"
+							placeholder="Acme Corp"
+							autoComplete="organization"
+							error={errorField === "companyName"}
+						/>
+						<Field
+							label="Company slug"
+							value={slug}
+							onChange={setSlug}
+							type="text"
+							placeholder="acme-corp"
+							autoComplete="off"
+							error={errorField === "slug"}
+						/>
 
-						{error && <p className="text-xs font-medium text-[var(--risk)]">{error}</p>}
+						{error && (
+							<p className="text-xs font-medium text-[var(--risk)]">{error}</p>
+						)}
 
 						<button
 							type="submit"
@@ -122,13 +171,20 @@ export default function RegisterPage() {
 							className="group mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--ink)] py-3 text-sm font-medium text-[var(--paper)] transition-all hover:bg-[var(--cobalt-ink)] disabled:opacity-50"
 						>
 							{loading ? "Creating account…" : "Create account"}
-							{!loading && <span className="transition-transform group-hover:translate-x-0.5">→</span>}
+							{!loading && (
+								<span className="transition-transform group-hover:translate-x-0.5">
+									→
+								</span>
+							)}
 						</button>
 					</form>
 
 					<p className="mt-5 text-center text-sm text-[var(--ink-2)]">
 						Already have an account?{" "}
-						<Link href="/login" className="font-medium text-[var(--ink)] underline-offset-4 hover:underline">
+						<Link
+							href="/login"
+							className="font-medium text-[var(--ink)] underline-offset-4 hover:underline"
+						>
 							Log in
 						</Link>
 					</p>

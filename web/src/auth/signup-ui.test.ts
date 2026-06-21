@@ -26,6 +26,6 @@ describe("signup UI wiring", () => {
 	it("RegisterPage links back to login and posts to register endpoint", () => {
 		const register = read("components/auth/RegisterPage.tsx");
 		expect(register).toContain('href="/login"');
-		expect(register).toContain('/api/auth/register');
+		expect(register).toContain("/api/auth/register");
 	});
 });
