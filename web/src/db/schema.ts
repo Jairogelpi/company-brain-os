@@ -253,6 +253,37 @@ export const ingestionItems = pgTable(
 	],
 );
 
+export const transcriptionJobs = pgTable(
+	"transcription_jobs",
+	{
+		id: text("id").primaryKey(),
+		companyId: text("company_id").notNull().default("default"),
+		userId: text("user_id").notNull(),
+		source: text("source").notNull(),
+		storageKey: text("storage_key").notNull(),
+		mimeType: text("mime_type").notNull(),
+		status: text("status")
+			.$type<"queued" | "processing" | "completed" | "failed">()
+			.notNull()
+			.default("queued"),
+		transcript: text("transcript"),
+		noSpeech: boolean("no_speech").notNull().default(false),
+		failReason: text("fail_reason"),
+		provider: text("provider"),
+		durationSeconds: integer("duration_seconds"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => [
+		index("transcription_jobs_company_idx").on(table.companyId),
+		index("transcription_jobs_status_idx").on(table.status),
+	],
+);
+
 export const validationScopes = pgTable(
 	"validation_scopes",
 	{
