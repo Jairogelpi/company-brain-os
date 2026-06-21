@@ -5,6 +5,7 @@ import {
 	pgEnum,
 	pgTable,
 	text,
+	unique,
 	timestamp,
 	boolean,
 } from "drizzle-orm/pg-core";
@@ -153,14 +154,21 @@ export const memberships = pgTable(
 	],
 );
 
-export const companies = pgTable("companies", {
-	id: text("id").primaryKey(),
-	name: text("name").notNull(),
-	slug: text("slug").notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-});
+export const companies = pgTable(
+	"companies",
+	{
+		id: text("id").primaryKey(),
+		name: text("name").notNull(),
+		slug: text("slug").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => [
+		unique("companies_slug_unique").on(table.slug),
+		index("companies_slug_idx").on(table.slug),
+	],
+);
 
 export const users = pgTable(
 	"users",
