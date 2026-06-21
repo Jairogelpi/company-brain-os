@@ -1,16 +1,30 @@
-/**
- * Transcription service for audio/video files.
- *
- * Primary: Ollama multimodal (if available).
- * Fallback: stub (returns placeholder).
- * Production: OpenAI Whisper API / whisper.cpp / cloud STT.
- */
+/** Transcription provider seam for audio/video files. */
+
+import {
+	WhisperCppService,
+	type WhisperCppEnv,
+} from "./transcription-providers/whisper-cpp";
+import {
+	makeCloudService,
+	type CloudSttEnv,
+} from "./transcription-providers/cloud";
+import { UnavailableService } from "./transcription-providers/unavailable";
+
+export type TranscriptionProvider =
+	| "whisper-cpp"
+	| "whisper-api"
+	| "unavailable";
 
 export interface TranscriptionResult {
-	text: string;
-	language: string;
-	confidence: number;
-	provider: "ollama" | "stub" | "whisper-api";
+	text: string; // "" (empty/whitespace) on no-speech
+	language: string; // "unknown" if the provider doesn't report it
+	confidence: number; // 0-100; 0 when unknown but text present is allowed
+	provider: TranscriptionProvider;
+	/** Present only on no-speech so the caller can mark the job `completed`
+	 * with an explicit empty marker instead of fabricating proposals. */
+	noSpeech?: boolean;
+	/** Present when the provider could not decode the bytes (codec error). */
+	decodeError?: string;
 }
 
 export interface TranscriptionService {
@@ -21,76 +35,38 @@ export interface TranscriptionService {
 	): Promise<TranscriptionResult>;
 }
 
-/**
- * Stub transcription — returns a placeholder.
- * Used when no real transcription service is available.
- */
-class StubTranscriptionService implements TranscriptionService {
-	async transcribe(
-		filePath: string,
-		_mimeType: string,
-	): Promise<TranscriptionResult> {
-		return {
-			text: `[Transcription pending for ${filePath.split("/").pop() ?? filePath}. Integrate Whisper API or whisper.cpp for production.]`,
-			language: "unknown",
-			confidence: 0,
-			provider: "stub",
-		};
-	}
-
-	async transcribeBuffer(
-		_buffer: Buffer,
-		_mimeType: string,
-	): Promise<TranscriptionResult> {
-		return {
-			text: "[Transcription pending. Integrate Whisper for production.]",
-			language: "unknown",
-			confidence: 0,
-			provider: "stub",
-		};
+/** Typed error for unreachable / decode / config failures. */
+export class TranscriptionError extends Error {
+	constructor(
+		public readonly code: "unavailable" | "decode" | "config",
+		message: string,
+	) {
+		super(message);
+		this.name = "TranscriptionError";
 	}
 }
 
-/**
- * Ollama-based transcription using a multimodal model.
- * Falls back to stub if Ollama is unavailable.
- */
-class OllamaTranscriptionService implements TranscriptionService {
-	private ollamaUrl = "http://localhost:11434/api/generate";
+/** Config-driven factory. `env` is injectable for tests. */
+type TranscriptionEnv = Partial<NodeJS.ProcessEnv> &
+	WhisperCppEnv &
+	CloudSttEnv & {
+		TRANSCRIPTION_PROVIDER?: "whisper-cpp" | "cloud" | "none" | string;
+	};
 
-	async transcribe(
-		filePath: string,
-		mimeType: string,
-	): Promise<TranscriptionResult> {
-		try {
-			// Check if Ollama is reachable
-			const tagsRes = await fetch("http://localhost:11434/api/tags", {
-				signal: AbortSignal.timeout(3000),
-			});
-			if (!tagsRes.ok) throw new Error("Ollama not available");
-		} catch {
-			return new StubTranscriptionService().transcribe(filePath, mimeType);
-		}
-
-		// Ollama doesn't have native audio input via API yet.
-		// This is a placeholder for future Ollama audio support.
-		return new StubTranscriptionService().transcribe(filePath, mimeType);
-	}
-
-	async transcribeBuffer(
-		_buffer: Buffer,
-		mimeType: string,
-	): Promise<TranscriptionResult> {
-		return this.transcribe("buffer", mimeType);
+export function createTranscriptionService(
+	env: TranscriptionEnv = process.env,
+): TranscriptionService {
+	switch (env.TRANSCRIPTION_PROVIDER ?? "whisper-cpp") {
+		case "whisper-cpp":
+			return new WhisperCppService(env);
+		case "cloud":
+			return makeCloudService(env); // → Unavailable if unconfigured
+		case "none":
+			return new UnavailableService();
+		default:
+			return new UnavailableService();
 	}
 }
 
-/**
- * Factory: returns the best available transcription service.
- */
-export function createTranscriptionService(): TranscriptionService {
-	return new OllamaTranscriptionService();
-}
-
-// Re-export for convenience
+// Module-level singleton for non-test callers.
 export const transcriptionService = createTranscriptionService();

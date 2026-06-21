@@ -12,7 +12,7 @@ import {
 	listCompanies,
 	companyExists,
 } from "@/domain/company-service";
-import { transcriptionService } from "@/ai/transcription";
+import { createTranscriptionService } from "@/ai/transcription";
 
 describe("Rate Limiter", () => {
 	beforeEach(() => resetRateLimits());
@@ -130,20 +130,23 @@ describe("Multi-company", () => {
 });
 
 describe("Transcription", () => {
-	it("transcription service exists and has stub fallback", async () => {
-		const result = await transcriptionService.transcribe(
-			"test.mp3",
-			"audio/mpeg",
-		);
-		expect(result.text).toBeDefined();
-		expect(result.provider).toBeDefined();
+	it("transcription service degrades explicitly when disabled", async () => {
+		const service = createTranscriptionService({ TRANSCRIPTION_PROVIDER: "none" });
+		const result = await service.transcribe("test.mp3", "audio/mpeg");
+
+		expect(result).toEqual({
+			text: "",
+			language: "unknown",
+			confidence: 0,
+			provider: "unavailable",
+		});
 	});
 
-	it("transcribeBuffer also works", async () => {
-		const result = await transcriptionService.transcribeBuffer(
-			Buffer.from("test"),
-			"audio/wav",
-		);
-		expect(result.text).toBeDefined();
+	it("transcribeBuffer also degrades explicitly when disabled", async () => {
+		const service = createTranscriptionService({ TRANSCRIPTION_PROVIDER: "none" });
+		const result = await service.transcribeBuffer(Buffer.from("test"), "audio/wav");
+
+		expect(result.provider).toBe("unavailable");
+		expect(result.text).toBe("");
 	});
 });

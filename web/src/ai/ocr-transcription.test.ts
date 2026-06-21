@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { processFile, transcribeWithWhisper } from "./ocr-pipeline";
+import { processFile } from "./ocr-pipeline";
 import { createTranscriptionService } from "./transcription";
 
 const uploadDir = join(process.cwd(), "uploads");
@@ -56,28 +56,16 @@ describe("transcription contract", () => {
 		vi.unstubAllGlobals();
 	});
 
-	it("stub whisper hook makes lack of implementation explicit", async () => {
-		await expect(
-			transcribeWithWhisper("/tmp/interview.mp3"),
-		).resolves.toContain("Whisper not yet integrated");
-	});
-
-	it("falls back to stub transcription when Ollama is unavailable", async () => {
-		vi.stubGlobal(
-			"fetch",
-			vi.fn().mockRejectedValue(new Error("connection refused")),
-		);
-
-		const result = await createTranscriptionService().transcribe(
-			"/tmp/interview.mp3",
-			"audio/mpeg",
-		);
+	it("degrades explicitly when transcription is disabled", async () => {
+		const result = await createTranscriptionService({
+			TRANSCRIPTION_PROVIDER: "none",
+		}).transcribe("/tmp/interview.mp3", "audio/mpeg");
 
 		expect(result).toMatchObject({
-			provider: "stub",
+			provider: "unavailable",
 			language: "unknown",
 			confidence: 0,
+			text: "",
 		});
-		expect(result.text).toContain("interview.mp3");
 	});
 });
