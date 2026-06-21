@@ -120,7 +120,9 @@ export default function InboxPage() {
 		<div className="px-8 py-10 rise">
 			<div className="border-b border-border pb-6">
 				<div className="eyebrow">Zero-effort capture</div>
-				<h1 className="mt-2 text-4xl font-normal tracking-tight">Review inbox</h1>
+				<h1 className="mt-2 text-4xl font-normal tracking-tight">
+					Review inbox
+				</h1>
 				<p className="mt-2 max-w-xl text-sm text-muted-foreground">
 					Feed existing data — an employee CSV or a meeting transcript — and
 					approve the draft map. Nothing is written until you approve.
@@ -171,7 +173,9 @@ export default function InboxPage() {
 						<Button
 							onClick={() => {
 								if (text.trim())
-									ingest({ source: "pasted text", text }).then(() => setText(""));
+									ingest({ source: "pasted text", text }).then(() =>
+										setText(""),
+									);
 							}}
 							disabled={!allowed || busy || !text.trim()}
 							className="mt-2 self-start"
@@ -238,9 +242,7 @@ export default function InboxPage() {
 									onChange={() => toggle(it.id)}
 									disabled={!allowed}
 								/>
-								<span className="text-foreground">
-									{describe(it.proposal)}
-								</span>
+								<span className="text-foreground">{describe(it.proposal)}</span>
 								<span className="eyebrow ml-auto">{it.source}</span>
 							</label>
 						))}

@@ -24,16 +24,96 @@ function Icon({ children }: { children: ReactNode }) {
 }
 
 const NAV_ITEMS: Item[] = [
-	{ href: "/", label: "Dashboard", icon: <Icon><LayoutDashboard /></Icon> },
-	{ href: "/capture", label: "Capture", icon: <Icon><ScanLine /></Icon> },
-	{ href: "/inbox", label: "Inbox", icon: <Icon><Inbox /></Icon> },
-	{ href: "/people", label: "People", icon: <Icon><Users /></Icon> },
-	{ href: "/knowledge", label: "Knowledge", icon: <Icon><BookOpen /></Icon> },
-	{ href: "/graph", label: "Graph", icon: <Icon><GitBranch /></Icon> },
-	{ href: "/genome", label: "Genome", icon: <Icon><Dna /></Icon> },
-	{ href: "/simulator", label: "Simulator", icon: <Icon><SlidersHorizontal /></Icon> },
-	{ href: "/succession", label: "Succession", icon: <Icon><Share2 /></Icon> },
-	{ href: "/settings", label: "Settings", icon: <Icon><Settings /></Icon> },
+	{
+		href: "/",
+		label: "Dashboard",
+		icon: (
+			<Icon>
+				<LayoutDashboard />
+			</Icon>
+		),
+	},
+	{
+		href: "/capture",
+		label: "Capture",
+		icon: (
+			<Icon>
+				<ScanLine />
+			</Icon>
+		),
+	},
+	{
+		href: "/inbox",
+		label: "Inbox",
+		icon: (
+			<Icon>
+				<Inbox />
+			</Icon>
+		),
+	},
+	{
+		href: "/people",
+		label: "People",
+		icon: (
+			<Icon>
+				<Users />
+			</Icon>
+		),
+	},
+	{
+		href: "/knowledge",
+		label: "Knowledge",
+		icon: (
+			<Icon>
+				<BookOpen />
+			</Icon>
+		),
+	},
+	{
+		href: "/graph",
+		label: "Graph",
+		icon: (
+			<Icon>
+				<GitBranch />
+			</Icon>
+		),
+	},
+	{
+		href: "/genome",
+		label: "Genome",
+		icon: (
+			<Icon>
+				<Dna />
+			</Icon>
+		),
+	},
+	{
+		href: "/simulator",
+		label: "Simulator",
+		icon: (
+			<Icon>
+				<SlidersHorizontal />
+			</Icon>
+		),
+	},
+	{
+		href: "/succession",
+		label: "Succession",
+		icon: (
+			<Icon>
+				<Share2 />
+			</Icon>
+		),
+	},
+	{
+		href: "/settings",
+		label: "Settings",
+		icon: (
+			<Icon>
+				<Settings />
+			</Icon>
+		),
+	},
 ];
 
 export default function Sidebar() {

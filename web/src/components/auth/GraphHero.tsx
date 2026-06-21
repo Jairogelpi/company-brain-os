@@ -48,9 +48,10 @@ export default function GraphHero() {
 		};
 	}, [reduced]);
 
-	const current: RevealStep = buildRevealSteps(reduced)[
-		Math.min(step, buildRevealSteps(reduced).length - 1)
-	];
+	const current: RevealStep =
+		buildRevealSteps(reduced)[
+			Math.min(step, buildRevealSteps(reduced).length - 1)
+		];
 	const visible = new Set(current.visibleNodes);
 	const drawn = new Set(current.drawnEdges);
 
@@ -101,7 +102,11 @@ export default function GraphHero() {
 							r={14}
 							stroke="currentColor"
 							strokeWidth={1.5}
-							fill={isCritical ? "var(--color-highlighter-yellow)" : "var(--color-card)"}
+							fill={
+								isCritical
+									? "var(--color-highlighter-yellow)"
+									: "var(--color-card)"
+							}
 						/>
 						{isCritical && current.pulse && (
 							<circle

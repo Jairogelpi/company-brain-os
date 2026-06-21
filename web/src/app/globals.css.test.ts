@@ -6,13 +6,17 @@ const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
 
 describe("Programa design tokens (globals.css)", () => {
 	it("defines --color-primary as highlighter yellow on :root", () => {
-		expect(css).toMatch(/--color-primary:\s*var\(--color-highlighter-yellow\)/i);
+		expect(css).toMatch(
+			/--color-primary:\s*var\(--color-highlighter-yellow\)/i,
+		);
 	});
 
 	it("keeps --color-primary as highlighter yellow in the .dark override", () => {
 		const darkBlock = css.match(/\.dark\s*\{[^}]*\}/);
 		expect(darkBlock).not.toBeNull();
-		expect(darkBlock![0]).toMatch(/--color-primary:\s*var\(--color-highlighter-yellow\)/i);
+		expect(darkBlock![0]).toMatch(
+			/--color-primary:\s*var\(--color-highlighter-yellow\)/i,
+		);
 	});
 
 	it("declares the Programa raw color tokens including the highlighter hex", () => {

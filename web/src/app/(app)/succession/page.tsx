@@ -86,7 +86,10 @@ export default function SuccessionPage() {
 			body: JSON.stringify({ id, to }),
 		});
 		if (res.ok) await loadMissions();
-		else setErr((await res.json().catch(() => ({}))).error ?? "Transition failed.");
+		else
+			setErr(
+				(await res.json().catch(() => ({}))).error ?? "Transition failed.",
+			);
 	};
 
 	const copyMarkdown = () => {
@@ -173,10 +176,7 @@ export default function SuccessionPage() {
 								<Button variant="outline" onClick={copyMarkdown}>
 									Copy Markdown
 								</Button>
-								<Button
-									onClick={save}
-									disabled={playbook.actions.length === 0}
-								>
+								<Button onClick={save} disabled={playbook.actions.length === 0}>
 									Save plan
 								</Button>
 							</div>
@@ -187,12 +187,16 @@ export default function SuccessionPage() {
 									key={a.knowledgeId}
 									className="flex items-center gap-3 border-t border-border pt-2 text-sm"
 								>
-									<span className="numerals text-muted-foreground">{i + 1}</span>
+									<span className="numerals text-muted-foreground">
+										{i + 1}
+									</span>
 									<span className="text-foreground">{a.action}</span>
 									<span className="ml-auto flex items-center gap-3 text-xs text-muted-foreground">
 										{a.criticality && (
 											<Badge
-												variant={a.criticality === "high" ? "destructive" : "secondary"}
+												variant={
+													a.criticality === "high" ? "destructive" : "secondary"
+												}
 											>
 												{a.criticality}
 											</Badge>

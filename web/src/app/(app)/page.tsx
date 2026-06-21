@@ -30,7 +30,10 @@ export default function HomePage() {
 
 	const nodes = data?.nodes ?? [];
 	const edges = data?.edges ?? [];
-	const metrics = useMemo(() => computeAllMetrics(nodes, edges), [nodes, edges]);
+	const metrics = useMemo(
+		() => computeAllMetrics(nodes, edges),
+		[nodes, edges],
+	);
 	const risks = useMemo(() => detectAllRisks(nodes, edges), [nodes, edges]);
 	const totalExposure = useMemo(
 		() => computeTotalExposure(risks.risks, nodes),
@@ -173,7 +176,9 @@ export default function HomePage() {
 						{risks.risks.length > 0 ? (
 							<>
 								<div className="numerals mt-3 text-3xl font-light text-destructive">
-									{formatMoney(computeRiskExposure(risks.risks[0], nodes).exposure)}
+									{formatMoney(
+										computeRiskExposure(risks.risks[0], nodes).exposure,
+									)}
 								</div>
 								<p className="mt-2 text-sm font-medium leading-relaxed text-foreground">
 									{risks.risks[0].message}

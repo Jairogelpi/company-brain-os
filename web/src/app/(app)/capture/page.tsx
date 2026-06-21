@@ -126,7 +126,9 @@ export default function CapturePage() {
 						<CardContent className="p-0">
 							<div className="eyebrow">Extracted so far</div>
 							<div className="mt-3 flex flex-wrap gap-1.5">
-								{f.keyPerson && <Badge variant="secondary">{f.keyPerson.name}</Badge>}
+								{f.keyPerson && (
+									<Badge variant="secondary">{f.keyPerson.name}</Badge>
+								)}
 								{f.knowledge && (
 									<Badge variant="secondary">{f.knowledge.name}</Badge>
 								)}

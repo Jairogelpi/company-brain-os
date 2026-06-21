@@ -67,7 +67,9 @@ function Simulator() {
 	return (
 		<div className="px-8 py-10 rise">
 			<div className="border-b border-border pb-6">
-				<h1 className="text-4xl font-normal tracking-tight">Departure simulator</h1>
+				<h1 className="text-4xl font-normal tracking-tight">
+					Departure simulator
+				</h1>
 				<p className="mt-2 max-w-xl text-sm text-muted-foreground">
 					Select who disappears and see — instantly — what breaks, what
 					knowledge is orphaned, and what it costs. Nothing is changed.
@@ -187,9 +189,7 @@ function ImpactPanel({
 	return (
 		<Card className="p-5">
 			<CardContent className="p-0">
-				<div
-					className={`eyebrow ${tone === "risk" ? "text-destructive" : ""}`}
-				>
+				<div className={`eyebrow ${tone === "risk" ? "text-destructive" : ""}`}>
 					{title}
 				</div>
 				{items.length === 0 ? (

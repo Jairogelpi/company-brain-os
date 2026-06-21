@@ -53,9 +53,9 @@ export default function CanvasPage() {
 				<div className="space-y-2">
 					<h1 className="text-3xl font-medium tracking-tight">Graph Canvas</h1>
 					<p className="text-sm text-muted-foreground">
-						Demo canvas rendering the graph populated from the adaptive interview
-						engine. Nodes are color-coded by type. Arrows represent domain
-						relationships.
+						Demo canvas rendering the graph populated from the adaptive
+						interview engine. Nodes are color-coded by type. Arrows represent
+						domain relationships.
 					</p>
 					<div className="flex flex-wrap gap-2 text-sm">
 						{[

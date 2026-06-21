@@ -39,7 +39,9 @@ export default function KnowledgePage() {
 			<div className="flex items-end justify-between border-b border-border pb-6">
 				<div>
 					<div className="eyebrow">Institutional memory</div>
-					<h1 className="mt-2 text-4xl font-normal tracking-tight">Knowledge</h1>
+					<h1 className="mt-2 text-4xl font-normal tracking-tight">
+						Knowledge
+					</h1>
 				</div>
 				<div className="text-right text-[13px] text-muted-foreground">
 					<span className="numerals text-foreground">{knowledge.length}</span>{" "}
@@ -69,7 +71,10 @@ export default function KnowledgePage() {
 					const isBusZero = busFactor === 0;
 
 					return (
-						<Card key={k.id} className="p-5 transition-transform hover:-translate-y-0.5">
+						<Card
+							key={k.id}
+							className="p-5 transition-transform hover:-translate-y-0.5"
+						>
 							<CardContent className="p-0">
 								<div className="text-sm font-semibold text-foreground">
 									{k.name}

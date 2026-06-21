@@ -175,7 +175,9 @@ export default function RegisterPage() {
 								</div>
 
 								{error && (
-									<p className="text-xs font-medium text-destructive">{error}</p>
+									<p className="text-xs font-medium text-destructive">
+										{error}
+									</p>
 								)}
 
 								<Button

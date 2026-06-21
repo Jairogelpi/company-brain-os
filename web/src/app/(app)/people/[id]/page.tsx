@@ -136,7 +136,9 @@ export default function PersonDetailPage() {
 						<SkillRow key={skill.id} name={skill.name} level={skill.level} />
 					))}
 					{skills.length === 0 && (
-						<p className="text-sm text-muted-foreground">No skills mapped yet.</p>
+						<p className="text-sm text-muted-foreground">
+							No skills mapped yet.
+						</p>
 					)}
 				</div>
 			</div>
