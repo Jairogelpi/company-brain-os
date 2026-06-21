@@ -16,18 +16,22 @@ Next.js F0 scaffold for Company Brain OS.
 - F4 Canvas↔Chat sync: unified `/dashboard` page with GraphCanvas and InterviewChat sharing one GraphService; canvas edits appear in the chat event log and interview proposals trigger canvas re-sync.
 - Drizzle schema for `nodes`, `edges`, `node_layout`, and append-only `event_log` (text IDs, aligned with domain contract).
 - Postgres + Apache AGE persistence: `PersistentGraphService` backed by Drizzle repository; Docker container provisioned.
-- In-memory repository fallback for tests (no DB needed).
+- In-memory repository fallback for fast unit tests (no DB needed).
+- Self-serve email/password signup: creates a company and owner user.
+- Split unit/integration test setup: unit tests exclude `*.integration.test.ts`; integration tests use Testcontainers.
 
 ## What is intentionally skipped
 
-No auth, AI calls, missions, media ingest, tRPC routes, or real-time collaboration yet. Canvas layout is not persisted to `node_layout`.
+Missions, real-time collaboration, and persisted canvas layout are still future work. OCR/transcription integrations keep explicit fallback/stub behavior when external providers are unavailable.
 
 ## Commands
 
 ```bash
 npm install
 npm run dev
+npm run typecheck
 npm test -- --run
+npm run test:integration
 npm run build
 ```
 
@@ -36,6 +40,17 @@ npm run build
 Target: Postgres + Apache AGE.
 
 F0 source of truth: relational `nodes` and `edges` tables (text IDs, no UUID layer).
+
+### Integration tests
+
+```bash
+# Requires Docker Desktop / Docker Engine.
+npm run test:integration
+```
+
+Integration tests start a disposable `pgvector/pgvector:pg16` container with Testcontainers, initialize `vector`, attempt Apache AGE, and apply the Drizzle schema. If AGE is unavailable, AGE-specific checks report a non-blocking skip reason. If Docker Desktop is not running or its Linux engine is broken, fix Docker first and rerun this command.
+
+Regular `npm test` intentionally excludes `src/**/*.integration.test.ts` so local unit feedback stays fast and DB-free.
 
 ### Running with PostgreSQL
 

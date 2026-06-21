@@ -12,7 +12,8 @@
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:migrate": "tsx src/db/migrate.ts",
-    "db:seed": "tsx src/db/seed.ts"
+    "db:seed": "tsx src/db/seed.ts",
+    "test:integration": "cross-env TESTCONTAINERS=1 vitest --config test.integration.config.ts run"
   },
   "dependencies": {
     "@radix-ui/react-slot": "1.3.0",
@@ -31,12 +32,15 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.3.1",
+    "@testcontainers/postgresql": "^12.0.3",
     "@types/node": "26.0.0",
     "@types/pg": "^8.20.0",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
+    "cross-env": "^10.1.0",
     "drizzle-kit": "0.31.10",
     "tailwindcss": "4.3.1",
+    "testcontainers": "^12.0.3",
     "tsx": "^4.22.4",
     "typescript": "6.0.3",
     "vitest": "4.1.9"
