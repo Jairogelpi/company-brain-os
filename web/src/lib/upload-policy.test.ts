@@ -5,6 +5,9 @@ import {
 	classifyMediaType,
 	isInlineSafe,
 	contentTypeForExt,
+	maxBytesForMime,
+	MAX_MEDIA_BYTES,
+	MAX_UPLOAD_BYTES,
 } from "./upload-policy";
 
 describe("upload policy", () => {
@@ -45,5 +48,11 @@ describe("upload policy", () => {
 		expect(contentTypeForExt("png")).toBe("image/png");
 		expect(contentTypeForExt("txt")).toContain("charset=utf-8");
 		expect(contentTypeForExt("unknown")).toBe("application/octet-stream");
+	});
+
+	it("uses larger media limits without raising document limits", () => {
+		expect(maxBytesForMime("audio/mpeg")).toBe(MAX_MEDIA_BYTES);
+		expect(maxBytesForMime("video/webm")).toBe(MAX_MEDIA_BYTES);
+		expect(maxBytesForMime("text/csv")).toBe(MAX_UPLOAD_BYTES);
 	});
 });

@@ -11,7 +11,7 @@
  * the filesystem or a cloud SDK directly.
  */
 
-import { writeFile, readFile, mkdir } from "fs/promises";
+import { writeFile, readFile, mkdir, stat } from "fs/promises";
 import { existsSync } from "fs";
 import { join } from "path";
 
@@ -19,6 +19,7 @@ export interface StorageAdapter {
 	put(key: string, body: Buffer, contentType?: string): Promise<void>;
 	get(key: string): Promise<Buffer | null>;
 	exists(key: string): Promise<boolean>;
+	size(key: string): Promise<number | null>;
 }
 
 // --- Disk adapter (default) ---
@@ -38,6 +39,11 @@ function createDiskAdapter(): StorageAdapter {
 		},
 		async exists(key) {
 			return existsSync(join(dir, key));
+		},
+		async size(key) {
+			const path = join(dir, key);
+			if (!existsSync(path)) return null;
+			return (await stat(path)).size;
 		},
 	};
 }
@@ -103,6 +109,17 @@ function createS3Adapter(): StorageAdapter {
 				return false;
 			}
 		},
+		async size(key) {
+			const { mod, s3 } = await client();
+			try {
+				const res = await s3.send(
+					new mod.HeadObjectCommand({ Bucket: bucket, Key: key }),
+				);
+				return typeof res.ContentLength === "number" ? res.ContentLength : null;
+			} catch {
+				return null;
+			}
+		},
 	};
 }
 
@@ -113,4 +130,8 @@ export function getStorage(): StorageAdapter {
 	const driver = (process.env.STORAGE_DRIVER ?? "disk").toLowerCase();
 	cached = driver === "s3" ? createS3Adapter() : createDiskAdapter();
 	return cached;
+}
+
+export function resetStorageForTests(): void {
+	cached = null;
 }

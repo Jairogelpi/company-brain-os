@@ -8,6 +8,7 @@
  */
 
 export const MAX_UPLOAD_BYTES = 50 * 1024 * 1024; // 50 MB
+export const MAX_MEDIA_BYTES = Number(process.env.MAX_MEDIA_BYTES) || 100 * 1024 * 1024; // 100 MB
 
 // Allowed MIME → canonical extension. SVG intentionally excluded.
 const ALLOWED: Record<string, string> = {
@@ -74,6 +75,13 @@ export function classifyMediaType(mime: string): string {
 	if (mime.startsWith("video/")) return "video";
 	if (mime.startsWith("audio/")) return "audio";
 	return "document";
+}
+
+export function maxBytesForMime(mime: string): number {
+	const mediaType = classifyMediaType(mime);
+	return mediaType === "audio" || mediaType === "video"
+		? MAX_MEDIA_BYTES
+		: MAX_UPLOAD_BYTES;
 }
 
 export function contentTypeForExt(ext: string): string {

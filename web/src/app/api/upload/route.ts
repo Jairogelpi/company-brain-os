@@ -4,10 +4,10 @@ import { requireApiUser } from "@/auth/api-guard";
 import { checkRateLimit } from "@/lib/rate-limiter";
 import { getStorage } from "@/lib/storage";
 import {
-	MAX_UPLOAD_BYTES,
 	classifyMediaType,
 	extForMime,
 	isAllowedMime,
+	maxBytesForMime,
 } from "@/lib/upload-policy";
 
 /**
@@ -38,14 +38,15 @@ export async function POST(request: Request) {
 			return NextResponse.json({ error: "No file provided" }, { status: 400 });
 		}
 
-		if (file.size > MAX_UPLOAD_BYTES) {
+		const mimeType = file.type || "application/octet-stream";
+		const maxBytes = maxBytesForMime(mimeType);
+		if (file.size > maxBytes) {
 			return NextResponse.json(
-				{ error: `File too large. Max ${MAX_UPLOAD_BYTES / 1024 / 1024} MB.` },
+				{ error: `File too large. Max ${maxBytes / 1024 / 1024} MB.` },
 				{ status: 413 },
 			);
 		}
 
-		const mimeType = file.type || "application/octet-stream";
 		if (!isAllowedMime(mimeType)) {
 			return NextResponse.json(
 				{ error: `Unsupported file type: ${mimeType}` },
