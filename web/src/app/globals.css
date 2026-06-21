@@ -81,29 +81,6 @@
 	border-color: var(--color-border);
 }
 
-/* ---------- legacy compat aliases (removed in PR4) ----------
-   Keeps pre-redesign pages structurally functional while PR2-PR3 migrate
-   them to Programa tokens. Chromatic legacy vars (cobalt/risk/gold/positive)
-   are intentionally NOT aliased — those pages are rewritten in PR3.
-*/
-:root {
-	--ink: var(--color-ink-black);
-	--ink-2: var(--color-muted-foreground);
-	--ink-3: var(--color-ash-gray);
-	--paper: var(--color-background);
-	--paper-2: var(--color-secondary);
-	--surface: var(--color-card);
-	--hairline: var(--color-border);
-	--hairline-strong: var(--color-ash-gray);
-	--radius: 10px;
-	--font-geist-sans: var(--font-inter);
-	--font-geist-mono: ui-monospace, monospace;
-}
-
-html {
-	color-scheme: light;
-}
-
 html.dark {
 	color-scheme: dark;
 }

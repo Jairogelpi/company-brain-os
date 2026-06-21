@@ -7,8 +7,18 @@ import {
 } from "@/domain/interview";
 import { createGraphService } from "@/domain/graph-service";
 import GraphCanvas from "@/canvas/GraphCanvas";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
-// ponytail: seed the graph service with a demo interview session using all probes
+const TYPE_DOT: Record<string, string> = {
+	Person: "bg-foreground",
+	Knowledge: "bg-muted-foreground",
+	Process: "bg-foreground",
+	Asset: "bg-muted-foreground",
+	Unit: "bg-muted",
+	Risk: "bg-destructive",
+};
+
 function seedDemoService() {
 	const session = [
 		"Pedro es indispensable; si falta mañana se para producción.",
@@ -38,46 +48,42 @@ export default function CanvasPage() {
 	const service = useMemo(() => seedDemoService(), []);
 
 	return (
-		<main className="min-h-[100dvh] px-6 py-10">
+		<main className="min-h-[100dvh] bg-background px-6 py-10 text-foreground">
 			<section className="mx-auto max-w-6xl space-y-6">
 				<div className="space-y-2">
-					<h1 className="text-3xl font-semibold tracking-tight text-slate-950">
-						Graph Canvas
-					</h1>
-					<p className="text-slate-600">
-						Demo canvas rendering the graph populated from the adaptive
-						interview engine. Nodes are color-coded by type. Arrows represent
-						domain relationships.
+					<h1 className="text-3xl font-medium tracking-tight">Graph Canvas</h1>
+					<p className="text-sm text-muted-foreground">
+						Demo canvas rendering the graph populated from the adaptive interview
+						engine. Nodes are color-coded by type. Arrows represent domain
+						relationships.
 					</p>
-					<div className="flex flex-wrap gap-2 text-sm text-slate-500">
+					<div className="flex flex-wrap gap-2 text-sm">
 						{[
-							{ label: "Person", color: "blue" },
-							{ label: "Knowledge", color: "orange" },
-							{ label: "Process", color: "green" },
-							{ label: "Asset", color: "violet" },
-							{ label: "Unit", color: "grey" },
-							{ label: "Risk", color: "red" },
-						].map(({ label, color }) => (
-							<span
-								key={label}
-								className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5"
-							>
+							{ label: "Person", type: "Person" },
+							{ label: "Knowledge", type: "Knowledge" },
+							{ label: "Process", type: "Process" },
+							{ label: "Asset", type: "Asset" },
+							{ label: "Unit", type: "Unit" },
+							{ label: "Risk", type: "Risk" },
+						].map(({ label, type }) => (
+							<Badge key={label} variant="secondary" className="gap-1.5">
 								<span
-									className="inline-block h-2.5 w-2.5 rounded-full"
-									style={{ backgroundColor: color }}
+									className={`inline-block h-2.5 w-2.5 rounded-full ${TYPE_DOT[type] ?? "bg-muted-foreground"}`}
 								/>
 								{label}
-							</span>
+							</Badge>
 						))}
 					</div>
 				</div>
 
-				<GraphCanvas service={service} />
+				<Card className="overflow-hidden p-0">
+					<GraphCanvas service={service} />
+				</Card>
 
-				<div className="rounded-xl border bg-slate-50 p-4 text-sm text-slate-600">
+				<div className="rounded-lg border border-border bg-secondary p-4 text-sm text-muted-foreground">
 					F2 Canvas demo — in-memory GraphService, no persistence. Edits on the
 					canvas write back to the service.{" "}
-					<a href="/" className="underline">
+					<a href="/" className="text-foreground underline">
 						Back to home
 					</a>
 				</div>

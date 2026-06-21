@@ -41,8 +41,8 @@ export function CostInput({
 	return (
 		<label className="flex flex-col gap-1">
 			<span className="eyebrow">{label}</span>
-			<span className="flex items-center rounded-lg border border-[var(--hairline)] bg-[var(--surface)] px-2 py-1 text-sm focus-within:border-[var(--cobalt)]">
-				{prefix && <span className="text-[var(--ink-3)]">{prefix}</span>}
+			<span className="flex items-center rounded-lg border border-border bg-background px-2 py-1 text-sm focus-within:border-foreground">
+				{prefix && <span className="text-muted-foreground">{prefix}</span>}
 				<input
 					type="number"
 					min={0}
@@ -51,7 +51,7 @@ export function CostInput({
 					onBlur={save}
 					disabled={disabled || saving}
 					placeholder="—"
-					className="w-20 bg-transparent outline-none placeholder:text-[var(--ink-3)] disabled:opacity-50"
+					className="w-20 bg-transparent text-foreground outline-none placeholder:text-muted-foreground disabled:opacity-50"
 				/>
 			</span>
 		</label>
