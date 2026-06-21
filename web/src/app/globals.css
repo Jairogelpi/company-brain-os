@@ -1,115 +1,137 @@
 @import "tailwindcss";
 
 /* ============================================================
-   Company Brain OS — "Cold Editorial" design system
-   Silver-grey paper · cool ink · a single cobalt signal · red for risk only
-   (Rotated from warm beige+brass — banned AI-tell per design-taste skill)
+   Company Brain OS — "Programa" design system
+   Swiss monochrome + a single highlighter-yellow signal.
+   No shadows. Elevation = surface shift + 1px ink border.
    ============================================================ */
 
+@theme inline {
+	/* raw Programa palette */
+	--color-ink-black: #1a1a1a;
+	--color-paper-white: #ffffff;
+	--color-fog-gray: #f4f4f4;
+	--color-ash-gray: #a3a3a3;
+	--color-highlighter-yellow: #fbff2b;
+
+	/* shadcn token contract — light */
+	--color-background: var(--color-paper-white);
+	--color-foreground: var(--color-ink-black);
+	--color-card: var(--color-paper-white);
+	--color-card-foreground: var(--color-ink-black);
+	--color-popover: var(--color-paper-white);
+	--color-popover-foreground: var(--color-ink-black);
+	--color-primary: var(--color-highlighter-yellow);
+	--color-primary-foreground: var(--color-ink-black);
+	--color-secondary: var(--color-fog-gray);
+	--color-secondary-foreground: var(--color-ink-black);
+	--color-muted: var(--color-fog-gray);
+	--color-muted-foreground: var(--color-ash-gray);
+	--color-accent: var(--color-fog-gray);
+	--color-accent-foreground: var(--color-ink-black);
+	--color-destructive: #b91c1c;
+	--color-destructive-foreground: var(--color-paper-white);
+	--color-border: var(--color-ink-black);
+	--color-input: var(--color-ink-black);
+	--color-ring: var(--color-highlighter-yellow);
+
+	--radius: 10px;
+	--radius-sm: 10px;
+	--radius-md: 10px;
+	--radius-lg: 16px;
+	--radius-xl: 16px;
+
+	/* type scale — Inter, weights 400/500, -0.03em tracking */
+	--text-caption: 14px;
+	--text-body-sm: 16px;
+	--text-subheading: 20px;
+	--text-heading-sm: 24px;
+	--text-heading: 42px;
+	--tracking: -0.03em;
+}
+
 :root {
-	--paper: #f4f5f7;
-	--paper-2: #ebedf1;
-	--surface: #ffffff;
-	--ink: #0c1015;
-	--ink-2: #4a5260;
-	--ink-3: #7a8493;
-	--hairline: #dfe3ea;
-	--hairline-strong: #c7cdd6;
-	--cobalt: #1d4ed8;
-	--cobalt-ink: #0a1a4f;
-	--risk: #c2410c;
-	--positive: #15803d;
-	--gold: #b07d2e;
-	--radius: 14px;
+	color-scheme: light;
+}
+
+.dark {
+	color-scheme: dark;
+	--color-background: #0e0e0e;
+	--color-foreground: #f4f4f4;
+	--color-card: #161616;
+	--color-card-foreground: #f4f4f4;
+	--color-popover: #161616;
+	--color-popover-foreground: #f4f4f4;
+	--color-primary: var(--color-highlighter-yellow);
+	--color-primary-foreground: #0e0e0e;
+	--color-secondary: #1f1f1f;
+	--color-secondary-foreground: #f4f4f4;
+	--color-muted: #1f1f1f;
+	--color-muted-foreground: #7a7a7a;
+	--color-accent: #1f1f1f;
+	--color-accent-foreground: #f4f4f4;
+	--color-destructive: #f87171;
+	--color-destructive-foreground: #0e0e0e;
+	--color-border: #2a2a2a;
+	--color-input: #2a2a2a;
+	--color-ring: var(--color-highlighter-yellow);
 }
 
 * {
-	border-color: var(--hairline);
+	border-color: var(--color-border);
+}
+
+/* ---------- legacy compat aliases (removed in PR4) ----------
+   Keeps pre-redesign pages structurally functional while PR2-PR3 migrate
+   them to Programa tokens. Chromatic legacy vars (cobalt/risk/gold/positive)
+   are intentionally NOT aliased — those pages are rewritten in PR3.
+*/
+:root {
+	--ink: var(--color-ink-black);
+	--ink-2: var(--color-muted-foreground);
+	--ink-3: var(--color-ash-gray);
+	--paper: var(--color-background);
+	--paper-2: var(--color-secondary);
+	--surface: var(--color-card);
+	--hairline: var(--color-border);
+	--hairline-strong: var(--color-ash-gray);
+	--radius: 10px;
+	--font-geist-sans: var(--font-inter);
+	--font-geist-mono: ui-monospace, monospace;
 }
 
 html {
 	color-scheme: light;
 }
 
+html.dark {
+	color-scheme: dark;
+}
+
 body {
 	margin: 0;
-	color: var(--ink);
-	background-color: var(--paper);
-	/* layered cool light for atmosphere */
-	background-image:
-		radial-gradient(120% 80% at 12% -10%, rgba(255, 255, 255, 0.9), transparent 55%),
-		radial-gradient(100% 70% at 110% 0%, rgba(29, 78, 216, 0.04), transparent 50%);
-	background-attachment: fixed;
-	font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+	font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+	letter-spacing: var(--tracking);
+	background: var(--color-background);
+	color: var(--color-foreground);
 	-webkit-font-smoothing: antialiased;
 	text-rendering: optimizeLegibility;
 }
 
-/* fine grain overlay */
-body::before {
-	content: "";
-	position: fixed;
-	inset: 0;
-	z-index: 0;
-	pointer-events: none;
-	opacity: 0.015;
-	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-
 /* ---------- typography primitives ---------- */
 
-.font-display {
-	font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-	font-weight: 600;
-	letter-spacing: -0.03em;
-}
-
 .eyebrow {
-	font-family: var(--font-geist-mono), ui-monospace, monospace;
-	font-size: 10.5px;
-	letter-spacing: 0.18em;
+	font-size: var(--text-caption);
+	letter-spacing: -0.42px;
 	text-transform: uppercase;
-	color: var(--ink-3);
+	color: var(--color-muted-foreground);
+	font-weight: 500;
 }
 
 .numerals {
-	font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 	font-variant-numeric: tabular-nums lining-nums;
-	font-weight: 300;
-	letter-spacing: -0.03em;
-}
-
-/* ---------- surfaces ---------- */
-
-.panel {
-	background: var(--surface);
-	border: 1px solid var(--hairline);
-	border-radius: var(--radius);
-	box-shadow:
-		0 1px 0 rgba(255, 255, 255, 0.8) inset,
-		0 1px 2px rgba(12, 16, 21, 0.04),
-		0 12px 28px -18px rgba(12, 16, 21, 0.18);
-}
-
-.panel-flat {
-	background: var(--surface);
-	border: 1px solid var(--hairline);
-	border-radius: var(--radius);
-}
-
-/* subtle ruled accent on the left edge */
-.tick-left {
-	position: relative;
-}
-.tick-left::before {
-	content: "";
-	position: absolute;
-	left: 0;
-	top: 14px;
-	bottom: 14px;
-	width: 3px;
-	border-radius: 3px;
-	background: var(--cobalt);
+	font-weight: 400;
+	letter-spacing: var(--tracking);
 }
 
 /* ---------- motion ---------- */
@@ -134,7 +156,6 @@ body::before {
 	}
 }
 
-/* keep app content above the grain layer */
 #app-root {
 	position: relative;
 	z-index: 1;
@@ -152,8 +173,8 @@ body::before {
 /* ---------- scrollbar / selection ---------- */
 
 ::selection {
-	background: rgba(29, 78, 216, 0.14);
-	color: var(--ink);
+	background: rgba(251, 255, 43, 0.3);
+	color: var(--color-ink-black);
 }
 ::-webkit-scrollbar {
 	width: 8px;
@@ -163,9 +184,9 @@ body::before {
 	background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-	background: var(--hairline-strong);
+	background: var(--color-border);
 	border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-	background: var(--ink-3);
+	background: var(--color-ash-gray);
 }
