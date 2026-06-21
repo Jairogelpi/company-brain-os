@@ -1,0 +1,28 @@
+# Local Pi runtime state
+.atl/
+.pi/agent/sessions/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+
+# Local env files
+.env*
+!.env.example
+
+# Uploads / runtime artifacts
+web/uploads/
+uploads/
+*.log
+npm-debug.log*
+
+# Drizzle
+web/drizzle/meta/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp

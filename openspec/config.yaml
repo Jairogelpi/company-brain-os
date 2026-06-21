@@ -1,0 +1,51 @@
+strict_tdd: true
+context: |
+  company_brain_os is a Next.js 15 + React 19 knowledge-graph platform that
+  maps tacit company knowledge into a graph and exploits it with an interview
+  engine, AI consultant, simulator, and succession playbooks.
+
+  Detected markers:
+    - Next.js app router (web/src/app)
+    - Drizzle ORM + Postgres + Apache AGE + pgvector
+    - tldraw canvas, next-auth, Tailwind 4
+    - vitest test runner (29 files, ~290 tests)
+
+  Test runner detected: vitest (web/vitest.config.ts).
+rules:
+  proposal:
+    require_problem_statement: true
+  spec:
+    require_acceptance_criteria: true
+  design:
+    require_tradeoffs: true
+  tasks:
+    protect_review_workload: true
+  apply:
+    test_command: "npm --prefix web run test"
+  verify:
+    test_command: "npm --prefix web run test"
+testing:
+  detected: "2026-06-21"
+  runner:
+    command: "npm --prefix web run test"
+    framework: "vitest"
+  layers:
+    unit: "npm --prefix web run test"
+    integration: ""
+    e2e: ""
+  commands:
+    unit:
+      - "npm --prefix web run test"
+    integration: []
+    e2e: []
+  coverage:
+    command: ""
+    commands: []
+quality:
+  lint: ""
+  lint_commands: []
+  typecheck: "npm --prefix web run typecheck"
+  typecheck_commands:
+    - "npm --prefix web run typecheck"
+  format: ""
+  format_commands: []

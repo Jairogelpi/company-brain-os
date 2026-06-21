@@ -1,0 +1,171 @@
+@import "tailwindcss";
+
+/* ============================================================
+   Company Brain OS — "Cold Editorial" design system
+   Silver-grey paper · cool ink · a single cobalt signal · red for risk only
+   (Rotated from warm beige+brass — banned AI-tell per design-taste skill)
+   ============================================================ */
+
+:root {
+	--paper: #f4f5f7;
+	--paper-2: #ebedf1;
+	--surface: #ffffff;
+	--ink: #0c1015;
+	--ink-2: #4a5260;
+	--ink-3: #7a8493;
+	--hairline: #dfe3ea;
+	--hairline-strong: #c7cdd6;
+	--cobalt: #1d4ed8;
+	--cobalt-ink: #0a1a4f;
+	--risk: #c2410c;
+	--positive: #15803d;
+	--gold: #b07d2e;
+	--radius: 14px;
+}
+
+* {
+	border-color: var(--hairline);
+}
+
+html {
+	color-scheme: light;
+}
+
+body {
+	margin: 0;
+	color: var(--ink);
+	background-color: var(--paper);
+	/* layered cool light for atmosphere */
+	background-image:
+		radial-gradient(120% 80% at 12% -10%, rgba(255, 255, 255, 0.9), transparent 55%),
+		radial-gradient(100% 70% at 110% 0%, rgba(29, 78, 216, 0.04), transparent 50%);
+	background-attachment: fixed;
+	font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+	-webkit-font-smoothing: antialiased;
+	text-rendering: optimizeLegibility;
+}
+
+/* fine grain overlay */
+body::before {
+	content: "";
+	position: fixed;
+	inset: 0;
+	z-index: 0;
+	pointer-events: none;
+	opacity: 0.015;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---------- typography primitives ---------- */
+
+.font-display {
+	font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+	font-weight: 600;
+	letter-spacing: -0.03em;
+}
+
+.eyebrow {
+	font-family: var(--font-geist-mono), ui-monospace, monospace;
+	font-size: 10.5px;
+	letter-spacing: 0.18em;
+	text-transform: uppercase;
+	color: var(--ink-3);
+}
+
+.numerals {
+	font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+	font-variant-numeric: tabular-nums lining-nums;
+	font-weight: 300;
+	letter-spacing: -0.03em;
+}
+
+/* ---------- surfaces ---------- */
+
+.panel {
+	background: var(--surface);
+	border: 1px solid var(--hairline);
+	border-radius: var(--radius);
+	box-shadow:
+		0 1px 0 rgba(255, 255, 255, 0.8) inset,
+		0 1px 2px rgba(12, 16, 21, 0.04),
+		0 12px 28px -18px rgba(12, 16, 21, 0.18);
+}
+
+.panel-flat {
+	background: var(--surface);
+	border: 1px solid var(--hairline);
+	border-radius: var(--radius);
+}
+
+/* subtle ruled accent on the left edge */
+.tick-left {
+	position: relative;
+}
+.tick-left::before {
+	content: "";
+	position: absolute;
+	left: 0;
+	top: 14px;
+	bottom: 14px;
+	width: 3px;
+	border-radius: 3px;
+	background: var(--cobalt);
+}
+
+/* ---------- motion ---------- */
+
+@keyframes rise {
+	from {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+.rise {
+	animation: rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.rise {
+		animation: none;
+	}
+}
+
+/* keep app content above the grain layer */
+#app-root {
+	position: relative;
+	z-index: 1;
+}
+
+@media (max-width: 768px) {
+	.sidebar-desktop {
+		display: none;
+	}
+	.main-content {
+		margin-left: 0 !important;
+	}
+}
+
+/* ---------- scrollbar / selection ---------- */
+
+::selection {
+	background: rgba(29, 78, 216, 0.14);
+	color: var(--ink);
+}
+::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+}
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+::-webkit-scrollbar-thumb {
+	background: var(--hairline-strong);
+	border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+	background: var(--ink-3);
+}

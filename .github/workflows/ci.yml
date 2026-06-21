@@ -1,0 +1,64 @@
+name: Company Brain OS CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: company_brain_os
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Run migrations
+        run: npx drizzle-kit migrate
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/company_brain_os
+
+      - name: Seed
+        run: npm run db:seed
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/company_brain_os
+          SEED_PASSWORD: ci-test-password
+
+      - name: Test
+        run: npm test -- --run
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/company_brain_os
+
+      - name: Build
+        run: npm run build
+        env:
+          AUTH_SECRET: build-time-placeholder-secret-not-used-at-runtime
