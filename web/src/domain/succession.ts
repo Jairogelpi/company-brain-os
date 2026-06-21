@@ -18,6 +18,11 @@ export interface PlaybookAction {
 	priorityScore: number;
 	action: string;
 	targetDate?: string; // ISO yyyy-mm-dd, set when a last day is given
+	detailedSteps?: string[];
+	suggestedTrainerId?: string;
+	suggestedTrainerName?: string;
+	rationale?: string;
+	riskNote?: string;
 }
 
 export interface Playbook {

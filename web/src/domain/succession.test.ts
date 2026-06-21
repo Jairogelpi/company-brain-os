@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { generatePlaybook } from "./succession";
 import type { GraphNode, GraphEdge, KnowledgeNode } from "./graph";
@@ -120,5 +123,13 @@ describe("succession — generatePlaybook", () => {
 	it("person with no mastered knowledge yields an empty playbook", () => {
 		const pb = generatePlaybook("person-pedro", { nodes: [pedro], edges: [] });
 		expect(pb.actions).toHaveLength(0);
+	});
+
+	it("keeps the deterministic domain layer free of AI imports", () => {
+		const dir = dirname(fileURLToPath(import.meta.url));
+		const source = readFileSync(join(dir, "succession.ts"), "utf8");
+
+		expect(source).not.toContain('from "@/ai/');
+		expect(source).not.toContain('from "./ai/');
 	});
 });
