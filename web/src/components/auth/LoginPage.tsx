@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
@@ -131,6 +132,13 @@ export default function LoginPage() {
 							)}
 						</button>
 					</form>
+
+					<p className="mt-5 text-center text-sm text-[var(--ink-2)]">
+						New here?{" "}
+						<Link href="/register" className="font-medium text-[var(--ink)] underline-offset-4 hover:underline">
+							Create account
+						</Link>
+					</p>
 				</div>
 			</div>
 		</div>
