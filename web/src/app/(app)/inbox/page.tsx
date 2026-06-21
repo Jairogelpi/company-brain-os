@@ -4,6 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/auth/AuthProvider";
 import type { GraphOperationProposal } from "@/domain/interview";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
 type PendingItem = {
 	id: string;
@@ -115,81 +118,87 @@ export default function InboxPage() {
 
 	return (
 		<div className="px-8 py-10 rise">
-			<div className="border-b border-[var(--hairline)] pb-6">
+			<div className="border-b border-border pb-6">
 				<div className="eyebrow">Zero-effort capture</div>
-				<h1 className="mt-2 font-display text-4xl font-normal tracking-tight">
-					Review inbox
-				</h1>
-				<p className="mt-2 max-w-xl text-sm text-[var(--ink-2)]">
+				<h1 className="mt-2 text-4xl font-normal tracking-tight">Review inbox</h1>
+				<p className="mt-2 max-w-xl text-sm text-muted-foreground">
 					Feed existing data — an employee CSV or a meeting transcript — and
 					approve the draft map. Nothing is written until you approve.
 				</p>
 			</div>
 
-			{/* Sources */}
 			<div className="mt-8 grid gap-4 lg:grid-cols-2">
-				<div className="panel flex flex-col gap-3 p-5">
-					<div className="eyebrow">Upload a file</div>
-					<label
-						className={`cursor-pointer self-start rounded-xl px-4 py-2.5 text-sm font-medium ${
-							allowed
-								? "bg-[var(--ink)] text-[var(--paper)] hover:bg-[var(--cobalt-ink)]"
-								: "cursor-not-allowed bg-[var(--paper-2)] text-[var(--ink-3)]"
-						}`}
-					>
-						Choose CSV / TXT / MD
-						<input
-							type="file"
-							accept=".csv,.txt,.md,text/csv,text/plain,text/markdown"
-							disabled={!allowed || busy}
-							className="hidden"
-							onChange={(e) => {
-								const f = e.target.files?.[0];
-								if (f) onFile(f);
-								e.target.value = "";
-							}}
-						/>
-					</label>
-					<span className="eyebrow">CSV columns: name, role, team, manager</span>
-				</div>
+				<Card className="flex flex-col gap-3 p-5">
+					<CardContent className="p-0">
+						<div className="eyebrow">Upload a file</div>
+						<label
+							className={`mt-2 inline-flex cursor-pointer self-start rounded-xl px-4 py-2.5 text-sm font-medium ${
+								allowed
+									? "bg-foreground text-background hover:opacity-90"
+									: "cursor-not-allowed bg-secondary text-muted-foreground"
+							}`}
+						>
+							Choose CSV / TXT / MD
+							<input
+								type="file"
+								accept=".csv,.txt,.md,text/csv,text/plain,text/markdown"
+								disabled={!allowed || busy}
+								className="hidden"
+								onChange={(e) => {
+									const f = e.target.files?.[0];
+									if (f) onFile(f);
+									e.target.value = "";
+								}}
+							/>
+						</label>
+						<span className="eyebrow mt-2 block">
+							CSV columns: name, role, team, manager
+						</span>
+					</CardContent>
+				</Card>
 
-				<div className="panel flex flex-col gap-3 p-5">
-					<div className="eyebrow">Paste a transcript / notes</div>
-					<textarea
-						value={text}
-						onChange={(e) => setText(e.target.value)}
-						placeholder="Pedro es indispensable; solo él configura la llenadora crítica…"
-						rows={3}
-						disabled={!allowed}
-						className="w-full rounded-xl border border-[var(--hairline)] bg-[var(--surface)] px-3 py-2 text-sm outline-none transition-all placeholder:text-[var(--ink-3)] focus:border-[var(--cobalt)] focus:ring-2 focus:ring-[var(--cobalt)]/15 disabled:opacity-50"
-					/>
-					<button
-						onClick={() => {
-							if (text.trim())
-								ingest({ source: "pasted text", text }).then(() => setText(""));
-						}}
-						disabled={!allowed || busy || !text.trim()}
-						className="self-start rounded-xl bg-[var(--ink)] px-4 py-2 text-sm font-medium text-[var(--paper)] transition-colors hover:bg-[var(--cobalt-ink)] disabled:opacity-50"
-					>
-						Extract from text
-					</button>
-				</div>
+				<Card className="flex flex-col gap-3 p-5">
+					<CardContent className="p-0">
+						<div className="eyebrow">Paste a transcript / notes</div>
+						<Textarea
+							value={text}
+							onChange={(e) => setText(e.target.value)}
+							placeholder="Pedro es indispensable; solo él configura la llenadora crítica…"
+							rows={3}
+							disabled={!allowed}
+							className="mt-2"
+						/>
+						<Button
+							onClick={() => {
+								if (text.trim())
+									ingest({ source: "pasted text", text }).then(() => setText(""));
+							}}
+							disabled={!allowed || busy || !text.trim()}
+							className="mt-2 self-start"
+						>
+							Extract from text
+						</Button>
+					</CardContent>
+				</Card>
 			</div>
 
-			{err && <p className="mt-4 text-sm font-medium text-[var(--risk)]">{err}</p>}
+			{err && (
+				<p className="mt-4 text-sm font-medium text-destructive">{err}</p>
+			)}
 			{msg && (
-				<div className="panel mt-4 p-4">
-					<p className="text-sm text-[var(--ink)]">{msg}</p>
-					<Link
-						href="/people"
-						className="mt-2 inline-block text-xs font-medium text-[var(--cobalt)] hover:underline"
-					>
-						View People →
-					</Link>
-				</div>
+				<Card className="mt-4 p-4">
+					<CardContent className="p-0">
+						<p className="text-sm text-foreground">{msg}</p>
+						<Link
+							href="/people"
+							className="mt-2 inline-block text-xs font-medium text-foreground hover:underline"
+						>
+							View People →
+						</Link>
+					</CardContent>
+				</Card>
 			)}
 
-			{/* Pending queue */}
 			<div className="mt-8">
 				<div className="mb-3 flex items-center justify-between">
 					<div className="eyebrow">
@@ -199,26 +208,25 @@ export default function InboxPage() {
 					</div>
 					{items.length > 0 && (
 						<div className="flex gap-2">
-							<button
+							<Button
+								variant="outline"
 								onClick={() => review("reject")}
 								disabled={busy || !allowed || selected.size === 0}
-								className="rounded-lg border border-[var(--hairline)] px-3 py-2 text-sm text-[var(--ink-2)] transition-colors hover:border-[var(--ink-3)] disabled:opacity-50"
 							>
 								Reject
-							</button>
-							<button
+							</Button>
+							<Button
 								onClick={() => review("approve")}
 								disabled={busy || !allowed || selected.size === 0}
-								className="rounded-lg bg-[var(--ink)] px-4 py-2 text-sm font-medium text-[var(--paper)] transition-colors hover:bg-[var(--cobalt-ink)] disabled:opacity-50"
 							>
 								{busy ? "Working…" : "Approve selected"}
-							</button>
+							</Button>
 						</div>
 					)}
 				</div>
 
 				{items.length > 0 && (
-					<div className="panel divide-y divide-[var(--hairline)]">
+					<Card className="divide-y divide-border p-0">
 						{items.map((it) => (
 							<label
 								key={it.id}
@@ -230,18 +238,18 @@ export default function InboxPage() {
 									onChange={() => toggle(it.id)}
 									disabled={!allowed}
 								/>
-								<span className="text-[var(--ink)]">
+								<span className="text-foreground">
 									{describe(it.proposal)}
 								</span>
 								<span className="eyebrow ml-auto">{it.source}</span>
 							</label>
 						))}
-					</div>
+					</Card>
 				)}
 			</div>
 
 			{!allowed && (
-				<p className="mt-6 text-sm text-[var(--ink-2)]">
+				<p className="mt-6 text-sm text-muted-foreground">
 					Your role is read-only — ask a contributor or owner to approve.
 				</p>
 			)}

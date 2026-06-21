@@ -10,6 +10,7 @@ import {
 import { simulateDeepImpact } from "@/domain/advanced-features";
 import { simulationExposure } from "@/domain/simulation-exposure";
 import { formatMoney } from "@/domain/financial-exposure";
+import { Card, CardContent } from "@/components/ui/card";
 
 function Simulator() {
 	const params = useSearchParams();
@@ -31,7 +32,6 @@ function Simulator() {
 				: simulateMultipleLeaving(nodes, edges, ids);
 		const exposure = simulationExposure(report, nodes);
 
-		// Cascade: merge second-order impacts across the removed people.
 		const indirect = new Map<string, { name: string; path: string[] }>();
 		for (const id of ids) {
 			for (const imp of simulateDeepImpact(nodes, edges, id).indirectImpacts) {
@@ -50,30 +50,34 @@ function Simulator() {
 		});
 
 	if (!data) {
-		return <div className="p-10 text-sm text-[var(--ink-3)]">{error || "Loading…"}</div>;
+		return (
+			<div className="p-10 text-sm text-muted-foreground">
+				{error || "Loading…"}
+			</div>
+		);
 	}
 
-	const orphaned = sim?.report.knowledgeImpacts.filter((k) => k.impact === "lost") ?? [];
-	const halted = sim?.report.processImpacts.filter((p) => p.impact === "broken") ?? [];
-	const weakened = sim?.report.processImpacts.filter((p) => p.impact === "weakened") ?? [];
+	const orphaned =
+		sim?.report.knowledgeImpacts.filter((k) => k.impact === "lost") ?? [];
+	const halted =
+		sim?.report.processImpacts.filter((p) => p.impact === "broken") ?? [];
+	const weakened =
+		sim?.report.processImpacts.filter((p) => p.impact === "weakened") ?? [];
 
 	return (
 		<div className="px-8 py-10 rise">
-			<div className="border-b border-[var(--hairline)] pb-6">
-				<h1 className="font-display text-4xl font-normal tracking-tight">
-					Departure simulator
-				</h1>
-				<p className="mt-2 max-w-xl text-sm text-[var(--ink-2)]">
-					Select who disappears and see — instantly — what breaks, what knowledge
-					is orphaned, and what it costs. Nothing is changed.
+			<div className="border-b border-border pb-6">
+				<h1 className="text-4xl font-normal tracking-tight">Departure simulator</h1>
+				<p className="mt-2 max-w-xl text-sm text-muted-foreground">
+					Select who disappears and see — instantly — what breaks, what
+					knowledge is orphaned, and what it costs. Nothing is changed.
 				</p>
 			</div>
 
 			<div className="mt-8 grid gap-6 lg:grid-cols-5">
-				{/* People picker */}
 				<div className="lg:col-span-2">
 					<div className="eyebrow mb-3">Remove people</div>
-					<div className="panel divide-y divide-[var(--hairline)]">
+					<Card className="divide-y divide-border p-0">
 						{people.map((p) => (
 							<label
 								key={p.id}
@@ -84,68 +88,83 @@ function Simulator() {
 									checked={selected.has(p.id)}
 									onChange={() => toggle(p.id)}
 								/>
-								<span className="text-[var(--ink)]">{p.name}</span>
+								<span className="text-foreground">{p.name}</span>
 							</label>
 						))}
 						{people.length === 0 && (
-							<div className="px-4 py-3 text-sm text-[var(--ink-3)]">
+							<div className="px-4 py-3 text-sm text-muted-foreground">
 								No people in the graph.
 							</div>
 						)}
-					</div>
+					</Card>
 				</div>
 
-				{/* Result */}
 				<div className="lg:col-span-3">
 					{!sim ? (
-						<div className="panel-flat p-12 text-center text-sm text-[var(--ink-2)]">
+						<div className="rounded-lg border border-border p-12 text-center text-sm text-muted-foreground">
 							Select one or more people to simulate their departure.
 						</div>
 					) : (
 						<div className="space-y-5">
-							{/* Hero € */}
-							<div className="panel tick-left p-6">
-								<div className="eyebrow text-[var(--risk)]">Newly at risk</div>
-								<div className="numerals mt-2 text-5xl font-light text-[var(--risk)]">
-									{formatMoney(sim.exposure.total)}
-								</div>
-								<p className="mt-2 text-sm text-[var(--ink-2)]">
-									{sim.report.summary.message}
-								</p>
-							</div>
+							<Card className="border-l-2 border-l-destructive p-6">
+								<CardContent className="p-0">
+									<div className="eyebrow text-destructive">Newly at risk</div>
+									<div className="numerals mt-2 text-5xl font-light text-destructive">
+										{formatMoney(sim.exposure.total)}
+									</div>
+									<p className="mt-2 text-sm text-muted-foreground">
+										{sim.report.summary.message}
+									</p>
+								</CardContent>
+							</Card>
 
 							<div className="grid gap-4 sm:grid-cols-2">
-								<Panel title="Orphaned knowledge" tone="risk" items={orphaned.map((k) => k.knowledgeName)} empty="None" />
-								<Panel title="Halted processes" tone="risk" items={halted.map((p) => p.processName)} empty="None" />
+								<ImpactPanel
+									title="Orphaned knowledge"
+									tone="risk"
+									items={orphaned.map((k) => k.knowledgeName)}
+									empty="None"
+								/>
+								<ImpactPanel
+									title="Halted processes"
+									tone="risk"
+									items={halted.map((p) => p.processName)}
+									empty="None"
+								/>
 							</div>
 
 							{weakened.length > 0 && (
-								<Panel title="Weakened processes" items={weakened.map((p) => p.processName)} empty="None" />
+								<ImpactPanel
+									title="Weakened processes"
+									items={weakened.map((p) => p.processName)}
+									empty="None"
+								/>
 							)}
 
-							{/* Cascade */}
-							<div className="panel p-5">
-								<div className="eyebrow">Cascade (second-order)</div>
-								{sim.indirect.length === 0 ? (
-									<p className="mt-2 text-sm text-[var(--ink-3)]">
-										No downstream cascade detected.
-									</p>
-								) : (
-									<ul className="mt-3 space-y-2">
-										{sim.indirect.map((i) => (
-											<li key={i.name} className="text-sm">
-												<span className="text-[var(--ink)]">{i.name}</span>
-												{i.path.length > 0 && (
-													<span className="text-[var(--ink-3)]">
-														{" "}
-														· via {i.path.join(" → ")}
-													</span>
-												)}
-											</li>
-										))}
-									</ul>
-								)}
-							</div>
+							<Card className="p-5">
+								<CardContent className="p-0">
+									<div className="eyebrow">Cascade (second-order)</div>
+									{sim.indirect.length === 0 ? (
+										<p className="mt-2 text-sm text-muted-foreground">
+											No downstream cascade detected.
+										</p>
+									) : (
+										<ul className="mt-3 space-y-2">
+											{sim.indirect.map((i) => (
+												<li key={i.name} className="text-sm">
+													<span className="text-foreground">{i.name}</span>
+													{i.path.length > 0 && (
+														<span className="text-muted-foreground">
+															{" "}
+															· via {i.path.join(" → ")}
+														</span>
+													)}
+												</li>
+											))}
+										</ul>
+									)}
+								</CardContent>
+							</Card>
 						</div>
 					)}
 				</div>
@@ -154,7 +173,7 @@ function Simulator() {
 	);
 }
 
-function Panel({
+function ImpactPanel({
 	title,
 	items,
 	empty,
@@ -166,22 +185,26 @@ function Panel({
 	tone?: "risk";
 }) {
 	return (
-		<div className="panel p-5">
-			<div className="eyebrow" style={tone === "risk" ? { color: "var(--risk)" } : undefined}>
-				{title}
-			</div>
-			{items.length === 0 ? (
-				<p className="mt-2 text-sm text-[var(--ink-3)]">{empty}</p>
-			) : (
-				<ul className="mt-2 space-y-1">
-					{items.map((i) => (
-						<li key={i} className="text-sm text-[var(--ink)]">
-							{i}
-						</li>
-					))}
-				</ul>
-			)}
-		</div>
+		<Card className="p-5">
+			<CardContent className="p-0">
+				<div
+					className={`eyebrow ${tone === "risk" ? "text-destructive" : ""}`}
+				>
+					{title}
+				</div>
+				{items.length === 0 ? (
+					<p className="mt-2 text-sm text-muted-foreground">{empty}</p>
+				) : (
+					<ul className="mt-2 space-y-1">
+						{items.map((i) => (
+							<li key={i} className="text-sm text-foreground">
+								{i}
+							</li>
+						))}
+					</ul>
+				)}
+			</CardContent>
+		</Card>
 	);
 }
 

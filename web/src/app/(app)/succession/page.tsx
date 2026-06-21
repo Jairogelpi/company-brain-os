@@ -11,6 +11,10 @@ import {
 	type Mission,
 	type MissionStatus,
 } from "@/domain/missions";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export default function SuccessionPage() {
 	const { can } = useAuth();
@@ -42,7 +46,6 @@ export default function SuccessionPage() {
 		if (!data || !personId) return;
 		setMsg("");
 		setErr("");
-		// Exposure (€) from the risk engine now drives prioritization.
 		const exposure = exposureByNode(
 			detectAllRisks(data.nodes, data.edges).risks,
 			data.nodes,
@@ -108,26 +111,25 @@ export default function SuccessionPage() {
 
 	return (
 		<div className="px-8 py-10 rise">
-			<div className="border-b border-[var(--hairline)] pb-6">
+			<div className="border-b border-border pb-6">
 				<div className="eyebrow">The day someone resigns</div>
-				<h1 className="mt-2 font-display text-4xl font-normal tracking-tight">
+				<h1 className="mt-2 text-4xl font-normal tracking-tight">
 					Succession playbook
 				</h1>
-				<p className="mt-2 max-w-xl text-sm text-[var(--ink-2)]">
-					Pick a departing person and their last day — get a prioritized,
-					dated knowledge-transfer plan.
+				<p className="mt-2 max-w-xl text-sm text-muted-foreground">
+					Pick a departing person and their last day — get a prioritized, dated
+					knowledge-transfer plan.
 				</p>
 			</div>
 
-			{/* Generator */}
-			<div className="panel mt-8 flex flex-wrap items-end gap-4 p-5">
+			<Card className="mt-8 flex flex-wrap items-end gap-4 p-5">
 				<label className="flex flex-col gap-1">
 					<span className="eyebrow">Departing person</span>
 					<select
 						value={personId}
 						onChange={(e) => setPersonId(e.target.value)}
 						disabled={!allowed}
-						className="rounded-xl border border-[var(--hairline)] bg-[var(--surface)] px-3 py-2 text-sm outline-none focus:border-[var(--cobalt)]"
+						className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-foreground disabled:opacity-50"
 					>
 						<option value="">Select…</option>
 						{people.map((p) => (
@@ -139,112 +141,100 @@ export default function SuccessionPage() {
 				</label>
 				<label className="flex flex-col gap-1">
 					<span className="eyebrow">Last working day</span>
-					<input
+					<Input
 						type="date"
 						value={lastDay}
 						onChange={(e) => setLastDay(e.target.value)}
 						disabled={!allowed}
-						className="rounded-xl border border-[var(--hairline)] bg-[var(--surface)] px-3 py-2 text-sm outline-none focus:border-[var(--cobalt)]"
+						className="rounded-xl"
 					/>
 				</label>
-				<button
-					onClick={generate}
-					disabled={!allowed || !personId}
-					className="rounded-xl bg-[var(--ink)] px-4 py-2 text-sm font-medium text-[var(--paper)] transition-colors hover:bg-[var(--cobalt-ink)] disabled:opacity-50"
-				>
+				<Button onClick={generate} disabled={!allowed || !personId}>
 					Generate plan
-				</button>
-			</div>
+				</Button>
+			</Card>
 
-			{err && <p className="mt-4 text-sm font-medium text-[var(--risk)]">{err}</p>}
-			{msg && <p className="mt-4 text-sm text-[var(--positive)]">{msg}</p>}
+			{err && (
+				<p className="mt-4 text-sm font-medium text-destructive">{err}</p>
+			)}
+			{msg && <p className="mt-4 text-sm text-foreground">{msg}</p>}
 
-			{/* Generated preview */}
 			{playbook && (
-				<div className="panel mt-6 p-6">
-					<div className="flex items-center justify-between">
-						<div>
-							<div className="eyebrow">Proposed plan</div>
-							<p className="mt-1 text-sm text-[var(--ink-2)]">{playbook.summary}</p>
+				<Card className="mt-6 p-6">
+					<CardContent className="p-0">
+						<div className="flex items-center justify-between">
+							<div>
+								<div className="eyebrow">Proposed plan</div>
+								<p className="mt-1 text-sm text-muted-foreground">
+									{playbook.summary}
+								</p>
+							</div>
+							<div className="flex gap-2">
+								<Button variant="outline" onClick={copyMarkdown}>
+									Copy Markdown
+								</Button>
+								<Button
+									onClick={save}
+									disabled={playbook.actions.length === 0}
+								>
+									Save plan
+								</Button>
+							</div>
 						</div>
-						<div className="flex gap-2">
-							<button
-								onClick={copyMarkdown}
-								className="rounded-lg border border-[var(--hairline)] px-3 py-1.5 text-sm text-[var(--ink-2)] hover:border-[var(--ink-3)]"
-							>
-								Copy Markdown
-							</button>
-							<button
-								onClick={save}
-								disabled={playbook.actions.length === 0}
-								className="rounded-lg bg-[var(--ink)] px-4 py-1.5 text-sm font-medium text-[var(--paper)] hover:bg-[var(--cobalt-ink)] disabled:opacity-50"
-							>
-								Save plan
-							</button>
-						</div>
-					</div>
-					<ol className="mt-4 space-y-2">
-						{playbook.actions.map((a, i) => (
-							<li
-								key={a.knowledgeId}
-								className="flex items-center gap-3 border-t border-[var(--hairline)] pt-2 text-sm"
-							>
-								<span className="numerals text-[var(--ink-3)]">{i + 1}</span>
-								<span className="text-[var(--ink)]">{a.action}</span>
-								<span className="ml-auto flex items-center gap-3 text-xs text-[var(--ink-2)]">
-									{a.criticality && (
-										<span
-											style={{
-												color:
-													a.criticality === "high"
-														? "var(--risk)"
-														: "var(--ink-2)",
-											}}
-										>
-											{a.criticality}
-										</span>
-									)}
-									<span>bus {a.busFactor}</span>
-									{a.targetDate && <span className="numerals">{a.targetDate}</span>}
-								</span>
-							</li>
-						))}
-						{playbook.actions.length === 0 && (
-							<li className="pt-2 text-sm text-[var(--ink-3)]">
-								This person holds no mapped knowledge.
-							</li>
-						)}
-					</ol>
-				</div>
+						<ol className="mt-4 space-y-2">
+							{playbook.actions.map((a, i) => (
+								<li
+									key={a.knowledgeId}
+									className="flex items-center gap-3 border-t border-border pt-2 text-sm"
+								>
+									<span className="numerals text-muted-foreground">{i + 1}</span>
+									<span className="text-foreground">{a.action}</span>
+									<span className="ml-auto flex items-center gap-3 text-xs text-muted-foreground">
+										{a.criticality && (
+											<Badge
+												variant={a.criticality === "high" ? "destructive" : "secondary"}
+											>
+												{a.criticality}
+											</Badge>
+										)}
+										<span>bus {a.busFactor}</span>
+										{a.targetDate && (
+											<span className="numerals">{a.targetDate}</span>
+										)}
+									</span>
+								</li>
+							))}
+							{playbook.actions.length === 0 && (
+								<li className="pt-2 text-sm text-muted-foreground">
+									This person holds no mapped knowledge.
+								</li>
+							)}
+						</ol>
+					</CardContent>
+				</Card>
 			)}
 
-			{/* Saved missions */}
 			<div className="mt-8">
 				<div className="mb-3 flex items-center justify-between">
 					<div className="eyebrow">Saved missions ({missions.length})</div>
 					{missions.length > 0 && (
-						<button
-							onClick={copyMarkdown}
-							className="rounded-lg border border-[var(--hairline)] px-3 py-1.5 text-xs text-[var(--ink-2)] hover:border-[var(--ink-3)]"
-						>
+						<Button variant="outline" size="sm" onClick={copyMarkdown}>
 							Export Markdown
-						</button>
+						</Button>
 					)}
 				</div>
 				{missions.length > 0 && (
-					<div className="panel divide-y divide-[var(--hairline)]">
+					<Card className="divide-y divide-border p-0">
 						{missions.map((m) => (
-							<div key={m.id} className="flex items-center gap-3 px-5 py-3 text-sm">
-								<span
-									className="rounded-full border px-2 py-0.5 text-[10px] font-medium"
-									style={{ borderColor: "var(--hairline-strong)", color: "var(--ink-2)" }}
-								>
-									{m.status}
-								</span>
-								<span className="text-[var(--ink)]">{m.objective}</span>
+							<div
+								key={m.id}
+								className="flex items-center gap-3 px-5 py-3 text-sm"
+							>
+								<Badge variant="secondary">{m.status}</Badge>
+								<span className="text-foreground">{m.objective}</span>
 								<span className="ml-auto flex items-center gap-2">
 									{m.dueDate && (
-										<span className="numerals text-xs text-[var(--ink-2)]">
+										<span className="numerals text-xs text-muted-foreground">
 											{m.dueDate}
 										</span>
 									)}
@@ -253,7 +243,7 @@ export default function SuccessionPage() {
 											<button
 												key={to}
 												onClick={() => transition(m.id, to)}
-												className="rounded border border-[var(--hairline)] px-2 py-0.5 text-[11px] text-[var(--ink-2)] hover:border-[var(--cobalt)] hover:text-[var(--cobalt-ink)]"
+												className="rounded border border-border px-2 py-0.5 text-[11px] text-muted-foreground hover:border-foreground hover:text-foreground"
 											>
 												→ {to}
 											</button>
@@ -261,7 +251,7 @@ export default function SuccessionPage() {
 								</span>
 							</div>
 						))}
-					</div>
+					</Card>
 				)}
 			</div>
 		</div>
