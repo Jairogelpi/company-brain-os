@@ -40,12 +40,13 @@ export function ChatClient() {
 				answer: string;
 				sources: ChatState["sources"];
 			};
-			setState((prev) =>
-				submitSuccess(prev, data.answer, data.sources ?? []),
-			);
+			setState((prev) => submitSuccess(prev, data.answer, data.sources ?? []));
 		} catch (err) {
 			setState((prev) =>
-				submitError(prev, err instanceof Error ? err.message : "Request failed"),
+				submitError(
+					prev,
+					err instanceof Error ? err.message : "Request failed",
+				),
 			);
 		}
 	}
@@ -78,7 +79,10 @@ export function ChatClient() {
 			)}
 
 			{state.status === "error" && state.error && (
-				<div role="alert" className="rounded border border-red-400 p-3 text-red-700">
+				<div
+					role="alert"
+					className="rounded border border-red-400 p-3 text-red-700"
+				>
 					Error: {state.error}. Try again.
 				</div>
 			)}
@@ -91,7 +95,9 @@ export function ChatClient() {
 			) : (
 				<section aria-label="Answer" className="space-y-2">
 					<h2 className="font-semibold">Answer</h2>
-					<div className="text-muted-foreground">No answer yet — ask a question above.</div>
+					<div className="text-muted-foreground">
+						No answer yet — ask a question above.
+					</div>
 				</section>
 			)}
 
@@ -102,8 +108,8 @@ export function ChatClient() {
 						{state.sources.map((s) => (
 							<li key={s.nodeId} className="text-sm">
 								<span className="font-medium">{s.nodeName}</span>{" "}
-								<span className="text-muted-foreground">({s.nodeType})</span>{" "}
-								— relevance {Math.round(s.relevance * 100)}%
+								<span className="text-muted-foreground">({s.nodeType})</span> —
+								relevance {Math.round(s.relevance * 100)}%
 							</li>
 						))}
 					</ul>

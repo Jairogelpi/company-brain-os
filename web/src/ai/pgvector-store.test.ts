@@ -21,7 +21,11 @@ function sqlToString(sqlObj: unknown): string {
 	const parts: string[] = [];
 	for (const chunk of chunks) {
 		if (chunk === null || chunk === undefined) continue;
-		if (typeof chunk === "string" || typeof chunk === "number" || typeof chunk === "boolean") {
+		if (
+			typeof chunk === "string" ||
+			typeof chunk === "number" ||
+			typeof chunk === "boolean"
+		) {
 			parts.push(String(chunk));
 			continue;
 		}
@@ -43,7 +47,9 @@ function sqlToString(sqlObj: unknown): string {
 		const ctor = c.constructor?.name;
 		if (ctor === "StringChunk") {
 			parts.push(
-				Array.isArray(c.value) ? (c.value as string[]).join("") : String(c.value),
+				Array.isArray(c.value)
+					? (c.value as string[]).join("")
+					: String(c.value),
 			);
 		} else if (ctor === "Param") {
 			parts.push(String(c.value));

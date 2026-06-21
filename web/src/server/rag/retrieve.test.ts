@@ -4,18 +4,24 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 const embedMock = vi.fn(async (text: string): Promise<number[]> => {
 	// Deterministic 768-dim stub keyed on text length.
 	const v = new Array<number>(768);
-	for (let i = 0; i < 768; i++) v[i] = (text.length + i) % 23 / 29;
+	for (let i = 0; i < 768; i++) v[i] = ((text.length + i) % 23) / 29;
 	return v;
 });
 
-const searchMock = vi.fn(async (
-	_qv: number[],
-	_topK: number,
-	_companyId?: string,
-) => [
-	{ id: "n-filler", score: 0.91, metadata: { nodeName: "Filler", nodeType: "Knowledge" } },
-	{ id: "n-pedro", score: 0.74, metadata: { nodeName: "Pedro", nodeType: "Person" } },
-]);
+const searchMock = vi.fn(
+	async (_qv: number[], _topK: number, _companyId?: string) => [
+		{
+			id: "n-filler",
+			score: 0.91,
+			metadata: { nodeName: "Filler", nodeType: "Knowledge" },
+		},
+		{
+			id: "n-pedro",
+			score: 0.74,
+			metadata: { nodeName: "Pedro", nodeType: "Person" },
+		},
+	],
+);
 
 vi.mock("@/ai/embeddings", () => ({ embed: embedMock }));
 vi.mock("@/db", () => ({
@@ -30,10 +36,20 @@ vi.mock("@/ai/pgvector-store", () => ({
 
 // nodes lookup mock: returns companyA for n-filler, companyB for n-pedro
 const nodesSelectMock = vi.fn(async (ids: string[]) => {
-	const rows: Array<{ id: string; name: string; type: string; company_id: string }> = [];
+	const rows: Array<{
+		id: string;
+		name: string;
+		type: string;
+		company_id: string;
+	}> = [];
 	for (const id of ids) {
 		if (id === "n-filler")
-			rows.push({ id, name: "Filler", type: "Knowledge", company_id: "companyA" });
+			rows.push({
+				id,
+				name: "Filler",
+				type: "Knowledge",
+				company_id: "companyA",
+			});
 		else if (id === "n-pedro")
 			rows.push({ id, name: "Pedro", type: "Person", company_id: "companyB" });
 	}

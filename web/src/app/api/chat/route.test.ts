@@ -99,7 +99,9 @@ describe("POST /api/chat", () => {
 			ctx("n1", "Filler", "Knowledge", 0.91),
 		]);
 		getLlmConfigMock.mockReturnValue({ apiKey: "k", model: "m" });
-		chatCompletionMock.mockResolvedValue("Pedro knows the filler config (source 1).");
+		chatCompletionMock.mockResolvedValue(
+			"Pedro knows the filler config (source 1).",
+		);
 
 		const { status, json } = await call({ question: "who knows the filler?" });
 		expect(status).toBe(200);
@@ -204,9 +206,6 @@ describe("POST /api/chat", () => {
 
 		const { status } = await call({ question: "q" });
 		expect(status).toBe(200);
-		expect(retrieveContextsMock).toHaveBeenCalledWith(
-			"companyA",
-			"q",
-		);
+		expect(retrieveContextsMock).toHaveBeenCalledWith("companyA", "q");
 	});
 });

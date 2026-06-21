@@ -187,6 +187,6 @@ export class OrganizationMemory {
 					`- **${r.metadata.nodeName}** (${r.metadata.nodeType}): ${Math.round(r.score * 100)}%`,
 			)
 			.join("\n");
-			return `Resultados más relevantes:\n${summary}`;
+		return `Resultados más relevantes:\n${summary}`;
 	}
 }

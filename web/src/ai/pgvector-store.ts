@@ -48,9 +48,7 @@ function resolveTopK(): number {
 	if (raw === undefined || raw === "") return 5;
 	const n = Number(raw);
 	if (!Number.isInteger(n) || n < 1 || n > 50) {
-		console.warn(
-			`RAG_TOP_K="${raw}" out of range (1..50); falling back to 5`,
-		);
+		console.warn(`RAG_TOP_K="${raw}" out of range (1..50); falling back to 5`);
 		return 5;
 	}
 	return n;

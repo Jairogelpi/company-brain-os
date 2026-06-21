@@ -100,9 +100,7 @@ describeIntegration("rag-qanda migration + pgvector store", () => {
 		await ctx.db.execute(
 			sql`DELETE FROM node_embeddings WHERE node_id = 'test-roundtrip'`,
 		);
-		await ctx.db.execute(
-			sql`DELETE FROM nodes WHERE id = 'test-roundtrip'`,
-		);
+		await ctx.db.execute(sql`DELETE FROM nodes WHERE id = 'test-roundtrip'`);
 
 		// Insert a node in the default company.
 		await ctx.db.execute(
@@ -124,9 +122,7 @@ describeIntegration("rag-qanda migration + pgvector store", () => {
 		await ctx.db.execute(
 			sql`DELETE FROM node_embeddings WHERE node_id = 'test-roundtrip'`,
 		);
-		await ctx.db.execute(
-			sql`DELETE FROM nodes WHERE id = 'test-roundtrip'`,
-		);
+		await ctx.db.execute(sql`DELETE FROM nodes WHERE id = 'test-roundtrip'`);
 	});
 
 	it("tenant isolation at DB level: companyB search does not return companyA rows", async () => {

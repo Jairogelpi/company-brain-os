@@ -79,9 +79,9 @@ export async function enrichAndFilter(
 		const node = opts.allNodes?.find((n) => n.id === r.id);
 		const content = node
 			? buildNodeContent(node, opts.allNodes ?? [], opts.allEdges ?? [])
-			: (r.metadata.content as string | undefined) ??
+			: ((r.metadata.content as string | undefined) ??
 				(r.metadata.nodeName as string | undefined) ??
-				r.id;
+				r.id);
 
 		out.push({
 			nodeId: r.id,
