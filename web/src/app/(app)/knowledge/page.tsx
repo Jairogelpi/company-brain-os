@@ -3,6 +3,10 @@
 import { useMemo, useState } from "react";
 import { computeBusFactors } from "@/domain/metrics";
 import { useGraph } from "@/components/useGraph";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
 
 export default function KnowledgePage() {
 	const { data, error } = useGraph();
@@ -24,32 +28,31 @@ export default function KnowledgePage() {
 
 	if (!data) {
 		return (
-			<div className="p-10 text-sm text-[var(--ink-3)]">{error || "Loading…"}</div>
+			<div className="p-10 text-sm text-muted-foreground">
+				{error || "Loading…"}
+			</div>
 		);
 	}
 
 	return (
 		<div className="px-8 py-10 rise">
-			<div className="flex items-end justify-between border-b border-[var(--hairline)] pb-6">
+			<div className="flex items-end justify-between border-b border-border pb-6">
 				<div>
 					<div className="eyebrow">Institutional memory</div>
-					<h1 className="mt-2 font-display text-4xl font-normal tracking-tight">
-						Knowledge
-					</h1>
+					<h1 className="mt-2 text-4xl font-normal tracking-tight">Knowledge</h1>
 				</div>
-				<div className="text-right text-[13px] text-[var(--ink-2)]">
-					<span className="numerals text-[var(--ink)]">{knowledge.length}</span>{" "}
+				<div className="text-right text-[13px] text-muted-foreground">
+					<span className="numerals text-foreground">{knowledge.length}</span>{" "}
 					areas documented
 				</div>
 			</div>
 
-			{/* Search */}
 			<div className="mt-6">
-				<input
+				<Input
 					value={search}
 					onChange={(e) => setSearch(e.target.value)}
 					placeholder="Search knowledge areas…"
-					className="w-full max-w-md rounded-xl border border-[var(--hairline)] bg-[var(--surface)] px-4 py-2.5 text-sm outline-none transition-all placeholder:text-[var(--ink-3)] focus:border-[var(--cobalt)] focus:ring-2 focus:ring-[var(--cobalt)]/15"
+					className="max-w-md"
 				/>
 			</div>
 
@@ -63,101 +66,60 @@ export default function KnowledgePage() {
 					const documented = (k as { documented?: boolean }).documented;
 					const critical =
 						(k as { criticality?: string }).criticality === "high";
-					const bfColor =
-						busFactor === 0
-							? "var(--risk)"
-							: busFactor === 1
-								? "var(--gold)"
-								: "var(--positive)";
+					const isBusZero = busFactor === 0;
 
 					return (
-						<div
-							key={k.id}
-							className="panel p-5 transition-transform hover:-translate-y-0.5"
-						>
-							<div className="text-sm font-semibold text-[var(--ink)]">
-								{k.name}
-							</div>
-							<div className="mt-2 flex flex-wrap gap-1.5">
-								<Tag>{k.type}</Tag>
-								{critical && <Tag tone="risk">Critical</Tag>}
-								<Tag tone={documented ? "ok" : "risk"}>
-									{documented ? "Documented" : "Undocumented"}
-								</Tag>
-							</div>
-
-							{/* Bus factor */}
-							<div className="mt-4">
-								<div className="flex items-center justify-between">
-									<span className="eyebrow">Bus factor</span>
-									<span
-										className="numerals text-base font-medium"
-										style={{ color: bfColor }}
-									>
-										{busFactor}
-									</span>
+						<Card key={k.id} className="p-5 transition-transform hover:-translate-y-0.5">
+							<CardContent className="p-0">
+								<div className="text-sm font-semibold text-foreground">
+									{k.name}
 								</div>
-								<div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[var(--paper-2)]">
-									<div
-										className="h-full rounded-full transition-all"
-										style={{
-											background: bfColor,
-											width:
-												busFactor === 0
-													? "6%"
-													: busFactor === 1
-														? "30%"
-														: "80%",
-										}}
+								<div className="mt-2 flex flex-wrap gap-1.5">
+									<Badge variant="secondary">{k.type}</Badge>
+									{critical && <Badge variant="destructive">Critical</Badge>}
+									<Badge variant={documented ? "secondary" : "destructive"}>
+										{documented ? "Documented" : "Undocumented"}
+									</Badge>
+								</div>
+
+								<div className="mt-4">
+									<div className="flex items-center justify-between">
+										<span className="eyebrow">Bus factor</span>
+										<span
+											className={`numerals text-base font-medium ${isBusZero ? "text-destructive" : "text-foreground"}`}
+										>
+											{busFactor}
+										</span>
+									</div>
+									<Progress
+										value={busFactor === 0 ? 6 : busFactor === 1 ? 30 : 80}
+										className="mt-1.5 h-1.5"
 									/>
 								</div>
-							</div>
 
-							{experts.length > 0 && (
-								<div className="mt-4">
-									<div className="eyebrow">Experts</div>
-									<div className="mt-1 text-xs text-[var(--ink)]">
-										{experts.join(", ")}
+								{experts.length > 0 && (
+									<div className="mt-4">
+										<div className="eyebrow">Experts</div>
+										<div className="mt-1 text-xs text-foreground">
+											{experts.join(", ")}
+										</div>
 									</div>
-								</div>
-							)}
-						</div>
+								)}
+							</CardContent>
+						</Card>
 					);
 				})}
 
 				{filtered.length === 0 && (
-					<div className="panel-flat col-span-full p-12 text-center">
-						<p className="text-sm text-[var(--ink-2)]">
+					<Card className="col-span-full p-12 text-center">
+						<p className="text-sm text-muted-foreground">
 							{search
 								? "No knowledge areas match your search."
 								: "No knowledge areas yet."}
 						</p>
-					</div>
+					</Card>
 				)}
 			</div>
 		</div>
-	);
-}
-
-function Tag({
-	children,
-	tone,
-}: {
-	children: React.ReactNode;
-	tone?: "risk" | "ok";
-}) {
-	const color =
-		tone === "risk"
-			? "var(--risk)"
-			: tone === "ok"
-				? "var(--positive)"
-				: "var(--ink-2)";
-	return (
-		<span
-			className="rounded-full border px-2 py-0.5 text-[11px] font-medium"
-			style={{ borderColor: "var(--hairline-strong)", color }}
-		>
-			{children}
-		</span>
 	);
 }

@@ -3,6 +3,9 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { useGraph } from "@/components/useGraph";
+import { Card } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 
 export default function PeoplePage() {
 	const { data, error } = useGraph();
@@ -32,24 +35,24 @@ export default function PeoplePage() {
 
 	if (!data) {
 		return (
-			<div className="p-10 text-sm text-[var(--ink-3)]">{error || "Loading…"}</div>
+			<div className="p-10 text-sm text-muted-foreground">
+				{error || "Loading…"}
+			</div>
 		);
 	}
 
 	return (
 		<div className="px-8 py-10 rise">
-			<div className="flex items-end justify-between border-b border-[var(--hairline)] pb-6">
+			<div className="flex items-end justify-between border-b border-border pb-6">
 				<div>
 					<div className="eyebrow">Who knows what</div>
-					<h1 className="mt-2 font-display text-4xl font-normal tracking-tight">
-						People
-					</h1>
+					<h1 className="mt-2 text-4xl font-normal tracking-tight">People</h1>
 				</div>
-				<div className="text-right text-[13px] text-[var(--ink-2)]">
-					<span className="numerals text-[var(--ink)]">{people.length}</span>{" "}
+				<div className="text-right text-[13px] text-muted-foreground">
+					<span className="numerals text-foreground">{people.length}</span>{" "}
 					people
-					<span className="mx-2 text-[var(--hairline-strong)]">·</span>
-					<span className="numerals text-[var(--ink)]">{skillsMapped}</span>{" "}
+					<span className="mx-2 text-muted-foreground">·</span>
+					<span className="numerals text-foreground">{skillsMapped}</span>{" "}
 					skills mapped
 				</div>
 			</div>
@@ -59,21 +62,23 @@ export default function PeoplePage() {
 					<Link
 						key={person.id}
 						href={`/people/${person.id}`}
-						className="panel group p-5 transition-transform hover:-translate-y-0.5"
+						className="group rounded-lg border border-border bg-card p-5 transition-transform hover:-translate-y-0.5"
 					>
 						<div className="flex items-center gap-3">
-							<div className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--ink)] font-display text-base font-semibold text-[var(--paper)]">
-								{person.name.charAt(0).toUpperCase()}
-							</div>
+							<Avatar className="h-11 w-11 rounded-full bg-foreground">
+								<AvatarFallback className="rounded-full bg-foreground text-base font-medium text-background">
+									{person.name.charAt(0).toUpperCase()}
+								</AvatarFallback>
+							</Avatar>
 							<div>
-								<div className="text-sm font-semibold text-[var(--ink)]">
+								<div className="text-sm font-semibold text-foreground">
 									{person.name}
 								</div>
 								<div className="eyebrow mt-0.5">
 									{skills.length} skill{skills.length !== 1 ? "s" : ""}
 								</div>
 							</div>
-							<span className="ml-auto text-[var(--ink-3)] transition-all group-hover:translate-x-0.5 group-hover:text-[var(--cobalt)]">
+							<span className="ml-auto text-muted-foreground transition-all group-hover:translate-x-0.5 group-hover:text-foreground">
 								→
 							</span>
 						</div>
@@ -81,27 +86,10 @@ export default function PeoplePage() {
 						{skills.length > 0 && (
 							<div className="mt-4 flex flex-wrap gap-1.5">
 								{skills.map((skill) => (
-									<span
-										key={skill.id}
-										className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium"
-										style={{
-											borderColor:
-												skill.level >= 4
-													? "var(--positive)"
-													: skill.level >= 3
-														? "var(--cobalt)"
-														: "var(--hairline-strong)",
-											color:
-												skill.level >= 4
-													? "var(--positive)"
-													: skill.level >= 3
-														? "var(--cobalt-ink)"
-														: "var(--ink-2)",
-										}}
-									>
+									<Badge key={skill.id} variant="secondary">
 										{skill.name}
-										<span className="opacity-60">L{skill.level}</span>
-									</span>
+										<span className="ml-1 opacity-60">L{skill.level}</span>
+									</Badge>
 								))}
 							</div>
 						)}
@@ -109,12 +97,12 @@ export default function PeoplePage() {
 				))}
 
 				{people.length === 0 && (
-					<div className="panel-flat col-span-full p-12 text-center">
-						<p className="text-sm text-[var(--ink-2)]">
+					<Card className="col-span-full p-12 text-center">
+						<p className="text-sm text-muted-foreground">
 							No people in the graph yet.
 						</p>
 						<p className="eyebrow mt-2">Seed data from the Dashboard</p>
-					</div>
+					</Card>
 				)}
 			</div>
 		</div>

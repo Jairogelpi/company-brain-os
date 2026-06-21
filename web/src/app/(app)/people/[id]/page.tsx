@@ -8,30 +8,25 @@ import { detectAllRisks } from "@/domain/risk-engine";
 import { computeRiskExposure, formatMoney } from "@/domain/financial-exposure";
 import { useGraph } from "@/components/useGraph";
 import { CostInput } from "@/components/CostInput";
+import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 
-function SkillBadge({ name, level }: { name: string; level: number }) {
-	const color =
-		level >= 4
-			? "var(--positive)"
-			: level >= 3
-				? "var(--cobalt)"
-				: "var(--ink-3)";
+function SkillRow({ name, level }: { name: string; level: number }) {
 	const label = level >= 4 ? "Expert" : level >= 3 ? "Proficient" : "Learning";
 
 	return (
-		<div className="panel-flat flex items-center justify-between px-4 py-3">
+		<div className="flex items-center justify-between rounded-lg border border-border px-4 py-3">
 			<div>
-				<div className="text-sm font-medium text-[var(--ink)]">{name}</div>
-				<div className="eyebrow mt-0.5" style={{ color }}>
-					{label}
-				</div>
+				<div className="text-sm font-medium text-foreground">{name}</div>
+				<div className="eyebrow mt-0.5 text-muted-foreground">{label}</div>
 			</div>
 			<div className="flex items-center gap-1">
 				{[1, 2, 3, 4, 5].map((dot) => (
 					<div
 						key={dot}
-						className="h-2 w-2 rounded-full"
-						style={{ background: dot <= level ? color : "var(--hairline-strong)" }}
+						className={`h-2 w-2 rounded-full ${dot <= level ? "bg-foreground" : "bg-muted"}`}
 					/>
 				))}
 			</div>
@@ -49,8 +44,6 @@ export default function PersonDetailPage() {
 	const deps = useMemo(() => computeDependencies(nodes, edges), [nodes, edges]);
 	const personDeps = deps.find((d) => d.personId === params.id);
 
-	// Total € exposure if this person leaves: risks where they're an expert,
-	// de-duplicated by at-risk node.
 	const personExposure = useMemo(() => {
 		const risks = detectAllRisks(nodes, edges).risks.filter((r) =>
 			r.relatedNodeIds.includes(params.id),
@@ -81,15 +74,20 @@ export default function PersonDetailPage() {
 
 	if (!data) {
 		return (
-			<div className="p-10 text-sm text-[var(--ink-3)]">{error || "Loading…"}</div>
+			<div className="p-10 text-sm text-muted-foreground">
+				{error || "Loading…"}
+			</div>
 		);
 	}
 
 	if (!person) {
 		return (
 			<div className="px-8 py-10">
-				<p className="text-sm text-[var(--ink-2)]">Person not found.</p>
-				<Link href="/people" className="text-sm text-[var(--cobalt)] hover:underline">
+				<p className="text-sm text-muted-foreground">Person not found.</p>
+				<Link
+					href="/people"
+					className="text-sm text-foreground hover:underline"
+				>
 					← Back to People
 				</Link>
 			</div>
@@ -100,109 +98,107 @@ export default function PersonDetailPage() {
 		<div className="px-8 py-10 rise">
 			<Link
 				href="/people"
-				className="eyebrow inline-block transition-colors hover:text-[var(--cobalt)]"
+				className="eyebrow inline-block transition-colors hover:text-foreground"
 			>
 				← Back to People
 			</Link>
 
-			{/* Profile header */}
-			<div className="mt-5 flex items-center gap-5 border-b border-[var(--hairline)] pb-7">
-				<div className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--ink)] font-display text-2xl font-semibold text-[var(--paper)]">
-					{person.name.charAt(0).toUpperCase()}
-				</div>
+			<div className="mt-5 flex items-center gap-5 border-b border-border pb-7">
+				<Avatar className="h-16 w-16 rounded-full bg-foreground">
+					<AvatarFallback className="rounded-full bg-foreground text-2xl font-medium text-background">
+						{person.name.charAt(0).toUpperCase()}
+					</AvatarFallback>
+				</Avatar>
 				<div>
-					<h1 className="font-display text-3xl font-normal tracking-tight">
-						{person.name}
-					</h1>
-					<div className="mt-1.5 flex flex-wrap items-center gap-3 text-sm text-[var(--ink-2)]">
+					<h1 className="text-3xl font-normal tracking-tight">{person.name}</h1>
+					<div className="mt-1.5 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
 						<span>{skills.length} skills mastered</span>
 						{learning.length > 0 && <span>· {learning.length} learning</span>}
 						{personDeps && personDeps.dependencyScore > 0 && (
-							<span className="font-medium text-[var(--risk)]">
-								· Dependency score {personDeps.dependencyScore}
-							</span>
+							<Badge variant="destructive">
+								Dependency score {personDeps.dependencyScore}
+							</Badge>
 						)}
 					</div>
 				</div>
 				<Link
 					href={`/simulator?person=${person.id}`}
-					className="ml-auto rounded-xl bg-[var(--ink)] px-4 py-2 text-sm font-medium text-[var(--paper)] transition-colors hover:bg-[var(--cobalt-ink)]"
+					className="ml-auto rounded-xl bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90"
 				>
 					Simulate departure →
 				</Link>
 			</div>
 
-			{/* Skills */}
 			<div className="mt-8">
 				<div className="eyebrow">Skills mastered</div>
 				<div className="mt-3 grid gap-3 md:grid-cols-2">
 					{skills.map((skill) => (
-						<SkillBadge key={skill.id} name={skill.name} level={skill.level} />
+						<SkillRow key={skill.id} name={skill.name} level={skill.level} />
 					))}
 					{skills.length === 0 && (
-						<p className="text-sm text-[var(--ink-3)]">No skills mapped yet.</p>
+						<p className="text-sm text-muted-foreground">No skills mapped yet.</p>
 					)}
 				</div>
 			</div>
 
-			{/* Learning */}
 			{learning.length > 0 && (
 				<div className="mt-8">
 					<div className="eyebrow">Currently learning</div>
 					<div className="mt-3 grid gap-3 md:grid-cols-2">
 						{learning.map((skill) => (
-							<SkillBadge key={skill.id} name={skill.name} level={skill.level} />
+							<SkillRow key={skill.id} name={skill.name} level={skill.level} />
 						))}
 					</div>
 				</div>
 			)}
 
-			{/* Replacement cost editor — turns the € from estimated into real. */}
-		<div className="panel mt-8 p-6">
-			<div className="eyebrow">Replacement cost</div>
-			<p className="mt-2 text-sm text-[var(--ink-2)]">
-				Used by the simulator and the succession playbook. Leave blank to keep
-				the documented defaults.
-			</p>
-			<div className="mt-4 grid gap-4 sm:grid-cols-2">
-				<CostInput
-					nodeId={person.id}
-					field="replacementCost"
-					value={
-						person.attributes?.replacementCost as number | undefined
-					}
-					label="Cost to replace (€)"
-					prefix="€"
-					onSaved={reload}
-				/>
-				<CostInput
-					nodeId={person.id}
-					field="replacementWeeks"
-					value={
-						person.attributes?.replacementWeeks as number | undefined
-					}
-					label="Weeks to replace"
-					prefix="wk "
-					onSaved={reload}
-				/>
-			</div>
-		</div>
-
-		{/* Critical dependency */}
-			{personDeps && personDeps.dependencyScore > 0 && (
-				<div className="panel tick-left mt-8 p-6">
-					<div className="eyebrow text-[var(--risk)]">If they leave</div>
-					{personExposure > 0 && (
-						<div className="numerals mt-2 text-4xl font-light text-[var(--risk)]">
-							{formatMoney(personExposure)}
-						</div>
-					)}
-					<p className="mt-2 text-sm leading-relaxed text-[var(--ink)]">
-						{person.name} is the sole expert for{" "}
-						<span className="font-semibold">{personDeps.dependencyScore}</span>{" "}
-						critical area(s). If they leave, these areas lose all expertise.
+			<Card className="mt-8 p-6">
+				<CardContent className="p-0">
+					<div className="eyebrow">Replacement cost</div>
+					<p className="mt-2 text-sm text-muted-foreground">
+						Used by the simulator and the succession playbook. Leave blank to
+						keep the documented defaults.
 					</p>
-				</div>
+					<Separator className="my-4" />
+					<div className="grid gap-4 sm:grid-cols-2">
+						<CostInput
+							nodeId={person.id}
+							field="replacementCost"
+							value={person.attributes?.replacementCost as number | undefined}
+							label="Cost to replace (€)"
+							prefix="€"
+							onSaved={reload}
+						/>
+						<CostInput
+							nodeId={person.id}
+							field="replacementWeeks"
+							value={person.attributes?.replacementWeeks as number | undefined}
+							label="Weeks to replace"
+							prefix="wk "
+							onSaved={reload}
+						/>
+					</div>
+				</CardContent>
+			</Card>
+
+			{personDeps && personDeps.dependencyScore > 0 && (
+				<Card className="mt-8 border-l-2 border-l-destructive p-6">
+					<CardContent className="p-0">
+						<div className="eyebrow text-destructive">If they leave</div>
+						{personExposure > 0 && (
+							<div className="numerals mt-2 text-4xl font-light text-destructive">
+								{formatMoney(personExposure)}
+							</div>
+						)}
+						<p className="mt-2 text-sm leading-relaxed text-foreground">
+							{person.name} is the sole expert for{" "}
+							<span className="font-semibold">
+								{personDeps.dependencyScore}
+							</span>{" "}
+							critical area(s). If they leave, these areas lose all expertise.
+						</p>
+					</CardContent>
+				</Card>
 			)}
 		</div>
 	);

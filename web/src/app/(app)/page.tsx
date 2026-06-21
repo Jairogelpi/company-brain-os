@@ -11,6 +11,10 @@ import {
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useGraph } from "@/components/useGraph";
 import Link from "next/link";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
 
 export default function HomePage() {
 	const { can } = useAuth();
@@ -38,7 +42,9 @@ export default function HomePage() {
 
 	if (!data) {
 		return (
-			<div className="p-10 text-sm text-[var(--ink-3)]">{error || "Loading…"}</div>
+			<div className="p-10 text-sm text-muted-foreground">
+				{error || "Loading…"}
+			</div>
 		);
 	}
 
@@ -46,21 +52,17 @@ export default function HomePage() {
 		return (
 			<div className="mx-auto max-w-2xl px-8 py-24 text-center rise">
 				<div className="eyebrow">Organizational intelligence</div>
-				<h1 className="mt-3 font-display text-4xl font-normal">
+				<h1 className="mt-3 text-4xl font-normal tracking-tight">
 					Nothing captured yet
 				</h1>
-				<p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-[var(--ink-2)]">
+				<p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
 					Your knowledge graph is empty. Seed it with a sample organization to
 					see coverage, risks, and bus-factor analysis in action.
 				</p>
 				{can("user.invite") ? (
-					<button
-						onClick={seed}
-						disabled={seeding}
-						className="mt-7 rounded-xl bg-[var(--ink)] px-5 py-2.5 text-sm font-medium text-[var(--paper)] transition-colors hover:bg-[var(--cobalt-ink)] disabled:opacity-50"
-					>
+					<Button onClick={seed} disabled={seeding} className="mt-7">
 						{seeding ? "Seeding…" : "Seed demo data"}
-					</button>
+					</Button>
 				) : (
 					<p className="mt-6 eyebrow">Ask an owner to seed initial data</p>
 				)}
@@ -73,25 +75,29 @@ export default function HomePage() {
 			label: "Coverage",
 			value: `${metrics.coverage.coveragePercent}%`,
 			sub: `${metrics.coverage.coveredCritical}/${metrics.coverage.totalCritical} critical covered`,
-			tick: "var(--positive)",
+			progress: metrics.coverage.coveragePercent,
+			risk: false,
 		},
 		{
 			label: "Health",
 			value: `${metrics.health.overallScore}`,
 			sub: "out of 100",
-			tick: "var(--cobalt)",
+			progress: metrics.health.overallScore,
+			risk: false,
 		},
 		{
 			label: "Company IQ",
 			value: `${metrics.companyIQ.iq}%`,
 			sub: `${metrics.companyIQ.documentedAndValidated}/${metrics.companyIQ.totalKnowledge} validated`,
-			tick: "var(--gold)",
+			progress: metrics.companyIQ.iq,
+			risk: false,
 		},
 		{
 			label: "Exposure at risk",
 			value: formatMoney(totalExposure.total),
 			sub: `${risks.summary.total} open · ${risks.summary.critical} critical`,
-			tick: "var(--risk)",
+			progress: Math.min(risks.summary.total * 10, 100),
+			risk: true,
 		},
 	];
 
@@ -103,88 +109,94 @@ export default function HomePage() {
 
 	return (
 		<div className="px-8 py-10 rise">
-			{/* Masthead */}
-			<div className="flex items-end justify-between border-b border-[var(--hairline)] pb-6">
-				<div>
-					<h1 className="font-display text-4xl font-normal tracking-tight">
-						Company Brain
-					</h1>
-				</div>
-				<div className="text-right text-[13px] text-[var(--ink-2)]">
-					<span className="numerals text-[var(--ink)]">{people.length}</span>{" "}
+			<div className="flex items-end justify-between border-b border-border pb-6">
+				<h1 className="text-4xl font-normal tracking-tight">Company Brain</h1>
+				<div className="text-right text-[13px] text-muted-foreground">
+					<span className="numerals text-foreground">{people.length}</span>{" "}
 					people
-					<span className="mx-2 text-[var(--hairline-strong)]">·</span>
-					<span className="numerals text-[var(--ink)]">
-						{knowledge.length}
-					</span>{" "}
+					<span className="mx-2 text-muted-foreground">·</span>
+					<span className="numerals text-foreground">{knowledge.length}</span>{" "}
 					knowledge areas
 				</div>
 			</div>
 
-			{/* Stat row */}
-			<div className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-[var(--hairline)] bg-[var(--hairline)] md:grid-cols-4">
+			<div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">
 				{stats.map((s) => (
-					<div key={s.label} className="bg-[var(--surface)] p-6">
-						<div className="flex items-center gap-2">
-							<span
-								className="h-1.5 w-1.5 rounded-full"
-								style={{ background: s.tick }}
-							/>
-							<span className="text-xs font-medium text-[var(--ink-2)]">{s.label}</span>
-						</div>
-						<div className="numerals mt-4 text-5xl font-light text-[var(--ink)]">
-							{s.value}
-						</div>
-						<div className="mt-2 text-xs text-[var(--ink-2)]">{s.sub}</div>
-					</div>
+					<Card key={s.label} className="p-6">
+						<CardContent className="p-0">
+							<div className="flex items-center gap-2">
+								<span
+									className={`h-1.5 w-1.5 rounded-full ${s.risk ? "bg-destructive" : "bg-muted-foreground"}`}
+								/>
+								<span className="text-xs font-medium text-muted-foreground">
+									{s.label}
+								</span>
+							</div>
+							<div
+								className={`numerals mt-4 text-5xl font-light ${s.risk ? "text-destructive" : "text-foreground"}`}
+							>
+								{s.value}
+							</div>
+							<div className="mt-2 text-xs text-muted-foreground">{s.sub}</div>
+							<Progress value={s.progress} className="mt-3 h-1.5" />
+						</CardContent>
+					</Card>
 				))}
 			</div>
 
-			{/* Quick links + top risk */}
 			<div className="mt-6 grid gap-6 lg:grid-cols-5">
 				<div className="grid gap-3 sm:grid-cols-3 lg:col-span-3">
 					{links.map((link) => (
 						<Link
 							key={link.href}
 							href={link.href}
-							className="panel group p-5 transition-transform hover:-translate-y-0.5"
+							className="group rounded-lg border border-border bg-card p-5 transition-transform hover:-translate-y-0.5"
 						>
 							<div className="flex items-center justify-between">
-								<span className="text-sm font-medium text-[var(--ink)]">
+								<span className="text-sm font-medium text-foreground">
 									{link.label}
 								</span>
-								<span className="text-[var(--ink-3)] transition-all group-hover:translate-x-0.5 group-hover:text-[var(--cobalt)]">
+								<span className="text-muted-foreground transition-all group-hover:translate-x-0.5 group-hover:text-foreground">
 									→
 								</span>
 							</div>
-							<div className="mt-1 text-xs text-[var(--ink-2)]">{link.desc}</div>
+							<div className="mt-1 text-xs text-muted-foreground">
+								{link.desc}
+							</div>
 						</Link>
 					))}
 				</div>
 
-				<div className="panel tick-left p-6 lg:col-span-2">
-					<div className="eyebrow text-[var(--risk)]">Most pressing risk</div>
-					{risks.risks.length > 0 ? (
-						<>
-							<div className="numerals mt-3 text-3xl font-light text-[var(--risk)]">
-								{formatMoney(computeRiskExposure(risks.risks[0], nodes).exposure)}
-							</div>
-							<p className="mt-2 text-sm font-medium leading-relaxed text-[var(--ink)]">
-								{risks.risks[0].message}
+				<Card className="border-l-2 border-l-destructive p-6 lg:col-span-2">
+					<CardContent className="p-0">
+						<div className="eyebrow text-destructive">Most pressing risk</div>
+						{risks.risks.length > 0 ? (
+							<>
+								<div className="numerals mt-3 text-3xl font-light text-destructive">
+									{formatMoney(computeRiskExposure(risks.risks[0], nodes).exposure)}
+								</div>
+								<p className="mt-2 text-sm font-medium leading-relaxed text-foreground">
+									{risks.risks[0].message}
+								</p>
+								<div className="mt-3 flex flex-wrap gap-1.5">
+									<Badge variant="destructive">
+										{risks.risks[0].severity ?? "risk"}
+									</Badge>
+								</div>
+								<Link
+									href="/graph"
+									className="mt-4 inline-block text-xs font-medium text-foreground hover:underline"
+								>
+									Investigate →
+								</Link>
+							</>
+						) : (
+							<p className="mt-3 text-sm text-muted-foreground">
+								No open risks detected.
 							</p>
-							<Link
-								href="/graph"
-								className="mt-4 inline-block text-xs font-medium text-[var(--cobalt)] hover:underline"
-							>
-								Investigate →
-							</Link>
-						</>
-					) : (
-						<p className="mt-3 text-sm text-[var(--ink-2)]">
-							No open risks detected.
-						</p>
-					)}
-				</div>
+						)}
+					</CardContent>
+				</Card>
 			</div>
 		</div>
 	);
