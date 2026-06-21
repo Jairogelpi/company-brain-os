@@ -178,8 +178,10 @@ describe("Excel parsing", () => {
 	// xlsx parsing is done via the xlsx npm package; the upload pipeline
 	// classifies xlsx as "document" via classifyMediaType.
 	it("xlsx files are classified as document in upload", () => {
-		expect(classifyMediaType(
-			"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-		)).toBe("document");
+		expect(
+			classifyMediaType(
+				"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+			),
+		).toBe("document");
 	});
 });
