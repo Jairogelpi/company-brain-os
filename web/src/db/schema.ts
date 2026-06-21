@@ -9,6 +9,7 @@ import {
 	timestamp,
 	boolean,
 } from "drizzle-orm/pg-core";
+import { vector768 } from "./vector-type";
 import { EDGE_TYPES, KNOWLEDGE_TYPES, NODE_TYPES } from "@/domain/graph";
 
 export const nodeTypeEnum = pgEnum("node_type", NODE_TYPES);
@@ -127,7 +128,7 @@ export const nodeEmbeddings = pgTable(
 		nodeId: text("node_id")
 			.primaryKey()
 			.references(() => nodes.id, { onDelete: "cascade" }),
-		embedding: jsonb("embedding").$type<number[]>().notNull(),
+		embedding: vector768("embedding").notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),

@@ -6,6 +6,7 @@ import {
 } from "@/domain/metrics";
 import { detectAllRisks } from "@/domain/risk-engine";
 import { VectorStore, simpleEmbed, type SearchResult } from "./vector-store";
+import { buildNodeContent } from "./node-content";
 
 // --- Organization Memory ---
 
@@ -186,40 +187,6 @@ export class OrganizationMemory {
 					`- **${r.metadata.nodeName}** (${r.metadata.nodeType}): ${Math.round(r.score * 100)}%`,
 			)
 			.join("\n");
-		return `Resultados más relevantes:\n${summary}`;
+			return `Resultados más relevantes:\n${summary}`;
 	}
-}
-
-function buildNodeContent(
-	node: GraphNode,
-	nodes: GraphNode[],
-	edges: GraphEdge[],
-	busFactor?: number,
-	confidence?: number,
-	documented?: boolean,
-): string {
-	const parts: string[] = [node.name, node.type];
-
-	if (busFactor !== undefined) parts.push(`bus factor ${busFactor}`);
-	if (confidence !== undefined) parts.push(`confianza ${confidence}%`);
-	if (documented !== undefined) {
-		parts.push(documented ? "documentado" : "no documentado");
-	}
-
-	const relatedEdges = edges.filter(
-		(e) => e.fromNodeId === node.id || e.toNodeId === node.id,
-	);
-	for (const e of relatedEdges) {
-		const otherId = e.fromNodeId === node.id ? e.toNodeId : e.fromNodeId;
-		const other = nodes.find((n) => n.id === otherId);
-		if (other) parts.push(`${e.type} ${other.name}`);
-	}
-
-	if (node.type === "Knowledge") {
-		const k = node as KnowledgeNode;
-		if (k.knowledgeType) parts.push(k.knowledgeType);
-		if (k.validationState) parts.push(k.validationState);
-	}
-
-	return parts.join(". ");
 }
