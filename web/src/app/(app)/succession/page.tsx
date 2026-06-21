@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useGraph } from "@/components/useGraph";
-import { generatePlaybook, type Playbook } from "@/domain/succession";
+import { getLlmConfig } from "@/ai/client";
+import { enrichPlaybookWithLLM } from "@/ai/succession-enrichment";
+import { generatePlaybook, type PlaybookAction, type Playbook } from "@/domain/succession";
 import { detectAllRisks } from "@/domain/risk-engine";
 import { exposureByNode } from "@/domain/financial-exposure";
 import {
@@ -27,6 +29,7 @@ export default function SuccessionPage() {
 	const [missions, setMissions] = useState<Mission[]>([]);
 	const [msg, setMsg] = useState("");
 	const [err, setErr] = useState("");
+	const [loading, setLoading] = useState(false);
 
 	const people = useMemo(
 		() => (data?.nodes ?? []).filter((n) => n.type === "Person"),
@@ -42,20 +45,29 @@ export default function SuccessionPage() {
 		loadMissions();
 	}, [loadMissions]);
 
-	const generate = () => {
+	const generate = async () => {
 		if (!data || !personId) return;
 		setMsg("");
 		setErr("");
+		setLoading(true);
 		const exposure = exposureByNode(
 			detectAllRisks(data.nodes, data.edges).risks,
 			data.nodes,
 		);
-		setPlaybook(
-			generatePlaybook(personId, data, {
-				lastDay: lastDay || undefined,
-				exposure,
-			}),
-		);
+		const heuristic = generatePlaybook(personId, data, {
+			lastDay: lastDay || undefined,
+			exposure,
+		});
+		try {
+			const cfg = getLlmConfig();
+			setPlaybook(
+				cfg ? await enrichPlaybookWithLLM(heuristic, data, { llm: cfg }) : heuristic,
+			);
+		} catch {
+			setPlaybook(heuristic);
+		} finally {
+			setLoading(false);
+		}
 	};
 
 	const save = async () => {
@@ -92,6 +104,16 @@ export default function SuccessionPage() {
 			);
 	};
 
+	const actionMarkdown = (a: PlaybookAction, i: number) => [
+		`${i + 1}. **${a.action}** ${a.targetDate ? `(by ${a.targetDate})` : ""} — ${a.criticality ?? "—"}, bus factor ${a.busFactor}`,
+		...(a.suggestedTrainerName ? [`   - Suggested trainer: ${a.suggestedTrainerName}`] : []),
+		...(a.rationale ? [`   - Rationale: ${a.rationale}`] : []),
+		...(a.riskNote ? [`   - Risk: ${a.riskNote}`] : []),
+		...(a.detailedSteps?.length
+			? ["   - Steps:", ...a.detailedSteps.map((s) => `     - ${s}`)]
+			: []),
+	];
+
 	const copyMarkdown = () => {
 		const pb = playbook;
 		const lines = pb
@@ -99,10 +121,7 @@ export default function SuccessionPage() {
 					`# Succession plan — ${pb.personName}`,
 					pb.lastDay ? `Last day: ${pb.lastDay}` : "",
 					"",
-					...pb.actions.map(
-						(a, i) =>
-							`${i + 1}. **${a.action}** ${a.targetDate ? `(by ${a.targetDate})` : ""} — ${a.criticality ?? "—"}, bus factor ${a.busFactor}`,
-					),
+					...pb.actions.flatMap(actionMarkdown),
 				]
 			: missions.map(
 					(m) =>
@@ -152,8 +171,8 @@ export default function SuccessionPage() {
 						className="rounded-xl"
 					/>
 				</label>
-				<Button onClick={generate} disabled={!allowed || !personId}>
-					Generate plan
+				<Button onClick={generate} disabled={!allowed || !personId || loading}>
+					{loading ? "Enriching plan…" : "Generate plan"}
 				</Button>
 			</Card>
 
@@ -161,6 +180,9 @@ export default function SuccessionPage() {
 				<p className="mt-4 text-sm font-medium text-destructive">{err}</p>
 			)}
 			{msg && <p className="mt-4 text-sm text-foreground">{msg}</p>}
+			{loading && (
+				<p className="mt-4 text-sm text-muted-foreground">Enriching plan…</p>
+			)}
 
 			{playbook && (
 				<Card className="mt-6 p-6">
@@ -185,27 +207,45 @@ export default function SuccessionPage() {
 							{playbook.actions.map((a, i) => (
 								<li
 									key={a.knowledgeId}
-									className="flex items-center gap-3 border-t border-border pt-2 text-sm"
+									className="border-t border-border pt-2 text-sm"
 								>
-									<span className="numerals text-muted-foreground">
-										{i + 1}
-									</span>
-									<span className="text-foreground">{a.action}</span>
-									<span className="ml-auto flex items-center gap-3 text-xs text-muted-foreground">
-										{a.criticality && (
-											<Badge
-												variant={
-													a.criticality === "high" ? "destructive" : "secondary"
-												}
-											>
-												{a.criticality}
-											</Badge>
-										)}
-										<span>bus {a.busFactor}</span>
-										{a.targetDate && (
-											<span className="numerals">{a.targetDate}</span>
-										)}
-									</span>
+									<div className="flex items-center gap-3">
+										<span className="numerals text-muted-foreground">
+											{i + 1}
+										</span>
+										<span className="text-foreground">{a.action}</span>
+										<span className="ml-auto flex items-center gap-3 text-xs text-muted-foreground">
+											{a.criticality && (
+												<Badge
+													variant={
+														a.criticality === "high" ? "destructive" : "secondary"
+													}
+												>
+													{a.criticality}
+												</Badge>
+											)}
+											<span>bus {a.busFactor}</span>
+											{a.targetDate && (
+												<span className="numerals">{a.targetDate}</span>
+											)}
+										</span>
+									</div>
+									{(a.detailedSteps?.length || a.rationale || a.riskNote) && (
+										<div className="mt-2 space-y-1 pl-8 text-xs text-muted-foreground">
+											{a.suggestedTrainerName && (
+												<p>Suggested trainer: {a.suggestedTrainerName}</p>
+											)}
+											{a.rationale && <p>Rationale: {a.rationale}</p>}
+											{a.riskNote && <p>Risk: {a.riskNote}</p>}
+											{a.detailedSteps?.length ? (
+												<ul className="list-disc pl-4">
+													{a.detailedSteps.map((step) => (
+														<li key={step}>{step}</li>
+													))}
+												</ul>
+											) : null}
+										</div>
+									)}
 								</li>
 							))}
 							{playbook.actions.length === 0 && (
@@ -230,29 +270,44 @@ export default function SuccessionPage() {
 				{missions.length > 0 && (
 					<Card className="divide-y divide-border p-0">
 						{missions.map((m) => (
-							<div
-								key={m.id}
-								className="flex items-center gap-3 px-5 py-3 text-sm"
-							>
-								<Badge variant="secondary">{m.status}</Badge>
-								<span className="text-foreground">{m.objective}</span>
-								<span className="ml-auto flex items-center gap-2">
-									{m.dueDate && (
-										<span className="numerals text-xs text-muted-foreground">
-											{m.dueDate}
-										</span>
-									)}
-									{allowed &&
-										VALID_TRANSITIONS[m.status].map((to) => (
-											<button
-												key={to}
-												onClick={() => transition(m.id, to)}
-												className="rounded border border-border px-2 py-0.5 text-[11px] text-muted-foreground hover:border-foreground hover:text-foreground"
-											>
-												→ {to}
-											</button>
-										))}
-								</span>
+							<div key={m.id} className="px-5 py-3 text-sm">
+								<div className="flex items-center gap-3">
+									<Badge variant="secondary">{m.status}</Badge>
+									<span className="text-foreground">{m.objective}</span>
+									<span className="ml-auto flex items-center gap-2">
+										{m.dueDate && (
+											<span className="numerals text-xs text-muted-foreground">
+												{m.dueDate}
+											</span>
+										)}
+										{allowed &&
+											VALID_TRANSITIONS[m.status].map((to) => (
+												<button
+													key={to}
+													onClick={() => transition(m.id, to)}
+													className="rounded border border-border px-2 py-0.5 text-[11px] text-muted-foreground hover:border-foreground hover:text-foreground"
+												>
+													→ {to}
+												</button>
+											))}
+									</span>
+								</div>
+								{(m.detailedSteps?.length || m.rationale || m.riskNote) && (
+									<div className="mt-2 space-y-1 pl-20 text-xs text-muted-foreground">
+										{m.suggestedTrainerName && (
+											<p>Suggested trainer: {m.suggestedTrainerName}</p>
+										)}
+										{m.rationale && <p>Rationale: {m.rationale}</p>}
+										{m.riskNote && <p>Risk: {m.riskNote}</p>}
+										{m.detailedSteps?.length ? (
+											<ul className="list-disc pl-4">
+												{m.detailedSteps.map((step) => (
+													<li key={step}>{step}</li>
+												))}
+											</ul>
+										) : null}
+									</div>
+								)}
 							</div>
 						))}
 					</Card>

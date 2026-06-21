@@ -14,6 +14,11 @@ type ActionInput = {
 	criticality: Criticality | null;
 	action: string;
 	targetDate?: string;
+	detailedSteps?: string[];
+	suggestedTrainerId?: string;
+	suggestedTrainerName?: string;
+	rationale?: string;
+	riskNote?: string;
 };
 
 const PRIORITY: Record<string, "low" | "medium" | "high" | "critical"> = {
@@ -54,6 +59,11 @@ export async function POST(request: Request) {
 		priority: PRIORITY[a.criticality ?? "medium"] ?? "medium",
 		dueDate: a.targetDate,
 		createdBy: user.id,
+		detailedSteps: a.detailedSteps,
+		suggestedTrainerId: a.suggestedTrainerId,
+		suggestedTrainerName: a.suggestedTrainerName,
+		rationale: a.rationale,
+		riskNote: a.riskNote,
 	}));
 	const saved = await saveMissions(user.companyId, body.personId, rows);
 	return NextResponse.json({ saved });

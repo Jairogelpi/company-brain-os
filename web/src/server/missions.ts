@@ -7,7 +7,7 @@ import { VALID_TRANSITIONS, type Mission, type MissionStatus } from "@/domain/mi
 
 type Row = typeof missions.$inferSelect;
 
-function rowToMission(r: Row): Mission {
+export function rowToMission(r: Row): Mission {
 	return {
 		id: r.id,
 		objective: r.objective,
@@ -20,6 +20,11 @@ function rowToMission(r: Row): Mission {
 		createdBy: r.createdBy,
 		createdAt: r.createdAt.toISOString(),
 		closedAt: r.closedAt?.toISOString(),
+		detailedSteps: r.detailedSteps ?? undefined,
+		suggestedTrainerId: r.suggestedTrainerId ?? undefined,
+		suggestedTrainerName: r.suggestedTrainerName ?? undefined,
+		rationale: r.rationale ?? undefined,
+		riskNote: r.riskNote ?? undefined,
 	};
 }
 
@@ -34,6 +39,11 @@ export async function saveMissions(
 		priority: "low" | "medium" | "high" | "critical";
 		dueDate?: string;
 		createdBy: string;
+		detailedSteps?: string[];
+		suggestedTrainerId?: string;
+		suggestedTrainerName?: string;
+		rationale?: string;
+		riskNote?: string;
 	}>,
 ): Promise<number> {
 	if (rows.length === 0) return 0;

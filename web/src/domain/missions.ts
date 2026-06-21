@@ -23,6 +23,11 @@ export interface Mission {
 	createdAt: string;
 	closedAt?: string;
 	riskId?: string;
+	detailedSteps?: string[];
+	suggestedTrainerId?: string;
+	suggestedTrainerName?: string;
+	rationale?: string;
+	riskNote?: string;
 }
 
 export type MediaType =

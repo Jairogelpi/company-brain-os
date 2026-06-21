@@ -222,6 +222,11 @@ export const missions = pgTable(
 			.notNull()
 			.defaultNow(),
 		closedAt: timestamp("closed_at", { withTimezone: true }),
+		detailedSteps: jsonb("detailed_steps").$type<string[]>(),
+		suggestedTrainerId: text("suggested_trainer_id"),
+		suggestedTrainerName: text("suggested_trainer_name"),
+		rationale: text("rationale"),
+		riskNote: text("risk_note"),
 	},
 	(table) => [
 		index("missions_company_idx").on(table.companyId),
