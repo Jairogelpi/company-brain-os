@@ -57,13 +57,6 @@ const productionProcess: GraphNode = {
 	criticality: "high",
 };
 
-const packagingProcess: GraphNode = {
-	id: "proc-packaging",
-	type: "Process",
-	name: "Packaging",
-	criticality: "medium",
-};
-
 const masteryPedro: GraphEdge = {
 	id: "e-m-p-f",
 	type: "MASTERS",
@@ -93,13 +86,6 @@ const requiresProduction: GraphEdge = {
 	type: "REQUIRES",
 	fromNodeId: productionProcess.id,
 	toNodeId: fillerKnowledge.id,
-};
-
-const requiresPackaging: GraphEdge = {
-	id: "e-r-pack-d",
-	type: "REQUIRES",
-	fromNodeId: packagingProcess.id,
-	toNodeId: doughKnowledge.id,
 };
 
 describe("Metrics Engine", () => {
@@ -192,17 +178,43 @@ describe("Metrics Engine", () => {
 			};
 
 			const cov = computeCoverage(
-				[pedro, laura, fillerKnowledge, signingKnowledge],
+				[pedro, laura, fillerKnowledge],
 				[masteryPedro, extraExpert],
 			);
 
-			expect(cov.coveredCritical).toBeGreaterThanOrEqual(0);
+			expect(cov.totalCritical).toBe(1);
+			expect(cov.coveredCritical).toBe(1);
+			expect(cov.coveragePercent).toBe(100);
 		});
 
-		it("returns 100% when there are no critical Knowledge nodes", () => {
+		it("returns 0% when there are no critical Knowledge nodes", () => {
 			const cov = computeCoverage([pedro, doughKnowledge], [masteryCarlos]);
 			expect(cov.totalCritical).toBe(0);
-			expect(cov.coveragePercent).toBe(100);
+			expect(cov.coveragePercent).toBe(0);
+		});
+
+		it("still reports partial coverage for non-empty critical knowledge", () => {
+			const secondCritical: KnowledgeNode = {
+				...signingKnowledge,
+				id: "k-second-critical",
+				name: "Second critical rule",
+			};
+			const extraExpert: GraphEdge = {
+				id: "e-m-l-critical",
+				type: "MASTERS",
+				fromNodeId: laura.id,
+				toNodeId: fillerKnowledge.id,
+				attributes: { level: 3 },
+			};
+
+			const cov = computeCoverage(
+				[pedro, laura, fillerKnowledge, secondCritical],
+				[masteryPedro, extraExpert],
+			);
+
+			expect(cov.totalCritical).toBe(2);
+			expect(cov.coveredCritical).toBe(1);
+			expect(cov.coveragePercent).toBe(50);
 		});
 	});
 

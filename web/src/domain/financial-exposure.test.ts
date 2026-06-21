@@ -8,12 +8,21 @@ import type { GraphNode } from "./graph";
 import type { DetectedRisk } from "./risk-engine";
 
 function process(id: string, attrs: Record<string, unknown> = {}): GraphNode {
-	return { id, type: "Process", name: id, criticality: "high", attributes: attrs };
+	return {
+		id,
+		type: "Process",
+		name: id,
+		criticality: "high",
+		attributes: attrs,
+	};
 }
 function person(id: string, attrs: Record<string, unknown> = {}): GraphNode {
 	return { id, type: "Person", name: id, attributes: attrs };
 }
-function risk(sourceNodeId: string, relatedNodeIds: string[] = []): DetectedRisk {
+function risk(
+	sourceNodeId: string,
+	relatedNodeIds: string[] = [],
+): DetectedRisk {
 	return {
 		id: `risk-${sourceNodeId}`,
 		riskType: "single_point_of_failure",
@@ -66,5 +75,29 @@ describe("financial-exposure", () => {
 		const total = computeTotalExposure(risks, nodes);
 		expect(total.total).toBe(3000); // 1000 (proc-x once) + 2000 (proc-y)
 		expect(total.currency).toBe("EUR");
+	});
+
+	it("treats negative cost attributes as missing estimates", () => {
+		const nodes = [
+			process("proc-x", { downtimeCostPerDay: -500, recoveryDays: 5 }),
+			person("pedro", { replacementCost: -1000 }),
+		];
+
+		const r = computeRiskExposure(risk("proc-x", ["pedro"]), nodes);
+
+		expect(r.exposure).toBeGreaterThanOrEqual(0);
+		expect(r.estimated).toBe(true);
+	});
+
+	it("keeps valid non-negative cost attributes as non-estimated", () => {
+		const nodes = [
+			process("proc-x", { downtimeCostPerDay: 500, recoveryDays: 2 }),
+			person("pedro", { replacementCost: 0 }),
+		];
+
+		const r = computeRiskExposure(risk("proc-x", ["pedro"]), nodes);
+
+		expect(r.exposure).toBe(1000);
+		expect(r.estimated).toBe(false);
 	});
 });

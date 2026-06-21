@@ -44,7 +44,7 @@ export function formatMoney(n: number, currency = CURRENCY): string {
 }
 
 function num(v: unknown): number | undefined {
-	return typeof v === "number" && Number.isFinite(v) ? v : undefined;
+	return typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : undefined;
 }
 
 /** Exposure for one risk: downtimeCostPerDay × recoveryDays + replacementCost. */
@@ -95,7 +95,10 @@ export function computeTotalExposure(
 	const byNode = new Map<string, number>();
 	for (const r of risks) {
 		const { exposure } = computeRiskExposure(r, nodes);
-		byNode.set(r.sourceNodeId, Math.max(byNode.get(r.sourceNodeId) ?? 0, exposure));
+		byNode.set(
+			r.sourceNodeId,
+			Math.max(byNode.get(r.sourceNodeId) ?? 0, exposure),
+		);
 	}
 	let total = 0;
 	for (const v of byNode.values()) total += v;

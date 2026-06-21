@@ -167,7 +167,7 @@ export function computeCoverage(
 		coveragePercent:
 			critical.length > 0
 				? Math.round((covered.length / critical.length) * 100)
-				: 100,
+				: 0,
 	};
 }
 

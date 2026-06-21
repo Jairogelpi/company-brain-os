@@ -401,6 +401,43 @@ describe("Graph Service", () => {
 			expect(service.readNode(person.id)?.name).toBe("Pedro G.");
 		});
 
+		it("rolls back a confirmed proposal batch when a later proposal fails", () => {
+			const service = createGraphService();
+			const newNode: GraphNode = {
+				id: "node-new",
+				type: "Person",
+				name: "New",
+			};
+			const proposals: GraphOperationProposal[] = [
+				{ type: "create_node", node: newNode, reason: "new" },
+				{
+					type: "update_node",
+					nodeId: "missing-node",
+					patch: { name: "Missing" },
+					reason: "bad update",
+				},
+			];
+
+			expect(() => service.applyConfirmedProposals(proposals)).toThrow(
+				/missing node/i,
+			);
+			expect(service.readNode(newNode.id)).toBeUndefined();
+			expect(service.eventLog()).toHaveLength(0);
+		});
+
+		it("still applies every event in a successful confirmed proposal batch", () => {
+			const service = createGraphService();
+			const proposals: GraphOperationProposal[] = [
+				{ type: "create_node", node: person, reason: "person" },
+				{ type: "create_node", node: knowledge, reason: "knowledge" },
+			];
+
+			const events = service.applyConfirmedProposals(proposals);
+
+			expect(events).toHaveLength(2);
+			expect(service.listNodes()).toHaveLength(2);
+		});
+
 		it("rejects proposals that would leave the graph invalid", () => {
 			const service = createGraphService();
 

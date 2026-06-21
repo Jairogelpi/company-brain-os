@@ -147,4 +147,29 @@ describe("ingest — employee list auto-map", () => {
 		expect(pedro.id).toBe("person-pedro");
 		expect(unit.id).toBe("unit-produccion");
 	});
+
+	it("keeps distinct deterministic ids for non-Latin employee names", () => {
+		const r = mapEmployeeRows([{ name: "王明" }, { name: "李雷" }], {
+			source: "employees.csv",
+		});
+
+		const people = nodesOf(r, "Person");
+		expect(people.map((n) => n.name).sort()).toEqual(["李雷", "王明"]);
+		expect(new Set(people.map((n) => n.id)).size).toBe(2);
+		expect(people.every((n) => n.id.startsWith("person-"))).toBe(true);
+		expect(people.map((n) => n.id)).not.toContain("person-");
+	});
+
+	it("re-imports non-Latin rows idempotently", () => {
+		const first = mapEmployeeRows([{ name: "王明" }, { name: "李雷" }], {
+			source: "x",
+		});
+		const ids = new Set(nodesOf(first, "Person").map((n) => n.id));
+		const second = mapEmployeeRows([{ name: "王明" }, { name: "李雷" }], {
+			source: "x",
+			existingNodeIds: ids,
+		});
+
+		expect(nodesOf(second, "Person")).toHaveLength(0);
+	});
 });

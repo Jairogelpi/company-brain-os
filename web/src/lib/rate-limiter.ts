@@ -10,6 +10,7 @@ interface TokenBucket {
 
 const buckets = new Map<string, TokenBucket>();
 
+const MAX_RATE_LIMIT_BUCKETS = 10_000;
 const DEFAULT_RATE = 60; // requests per minute
 const DEFAULT_CAPACITY = 100;
 
@@ -22,6 +23,10 @@ export function checkRateLimit(
 	let bucket = buckets.get(key);
 
 	if (!bucket) {
+		if (buckets.size >= MAX_RATE_LIMIT_BUCKETS) {
+			const oldestKey = buckets.keys().next().value as string | undefined;
+			if (oldestKey) buckets.delete(oldestKey);
+		}
 		bucket = { tokens: capacity, lastRefill: now };
 		buckets.set(key, bucket);
 	}

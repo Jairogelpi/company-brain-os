@@ -103,9 +103,9 @@ describe("Company Simulator", () => {
 
 		it("reports no impact when leaving person has no edges", () => {
 			const report = simulatePersonLeaving(
-				[pedro, carlos, fillerKnowledge, doughKnowledge],
+				[pedro, laura, carlos, fillerKnowledge, doughKnowledge],
 				[masteryPedro, masteryCarlos],
-				"laura", // Laura exists but has no edges
+				laura.id,
 			);
 
 			// Laura's departure shouldn't affect anything
@@ -180,6 +180,18 @@ describe("Company Simulator", () => {
 			expect(report.risksBefore).toBeDefined();
 			expect(report.risksAfter).toBeDefined();
 			expect(report.summary.newRisks).toBeGreaterThanOrEqual(0);
+		});
+
+		it("signals an explicit person-not-found result for unknown ids", () => {
+			const report = simulatePersonLeaving(
+				[pedro, fillerKnowledge],
+				[masteryPedro],
+				"ghost",
+			);
+
+			expect(report.summary.message).toContain("Person not found");
+			expect(report.summary.lostKnowledge).toBe(0);
+			expect(report.summary.brokenProcesses).toBe(0);
 		});
 	});
 

@@ -60,6 +60,15 @@ export interface SimulationReport {
 
 // --- Core simulation ---
 
+function filterEdgesForDepartingPeople(
+	edges: GraphEdge[],
+	personIds: string[],
+): GraphEdge[] {
+	return edges.filter(
+		(e) => !personIds.includes(e.fromNodeId) && !personIds.includes(e.toNodeId),
+	);
+}
+
 /**
  * Simulate the impact of a person leaving the company.
  * Removes all edges from the target person, recalculates everything, and compares.
@@ -76,10 +85,31 @@ export function simulatePersonLeaving(
 	const metricsBefore = computeAllMetrics(nodes, edges);
 	const risksBefore = detectAllRisks(nodes, edges);
 
+	if (!person) {
+		return {
+			personId,
+			personName,
+			scenario: `What if ${personName} leaves?`,
+			knowledgeImpacts: [],
+			processImpacts: [],
+			dependencyShifts: [],
+			metricsBefore,
+			metricsAfter: metricsBefore,
+			risksBefore,
+			risksAfter: risksBefore,
+			summary: {
+				lostKnowledge: 0,
+				degradedKnowledge: 0,
+				brokenProcesses: 0,
+				newRisks: 0,
+				healthDrop: 0,
+				message: `⚠️ Person not found: ${personId}`,
+			},
+		};
+	}
+
 	// Clone and remove person's edges
-	const remainingEdges = edges.filter(
-		(e) => e.fromNodeId !== personId && e.toNodeId !== personId,
-	);
+	const remainingEdges = filterEdgesForDepartingPeople(edges, [personId]);
 
 	// Compute AFTER state
 	const metricsAfter = computeAllMetrics(nodes, remainingEdges);
@@ -242,7 +272,7 @@ export function simulateMultipleLeaving(
 	personIds: string[],
 ): SimulationReport {
 	// Remove all edges from all target people
-	const remainingEdges = edges.filter((e) => !personIds.includes(e.fromNodeId));
+	const remainingEdges = filterEdgesForDepartingPeople(edges, personIds);
 
 	// Compute BEFORE state with original edges
 	const metricsBefore = computeAllMetrics(nodes, edges);

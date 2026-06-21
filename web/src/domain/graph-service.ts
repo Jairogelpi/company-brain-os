@@ -260,35 +260,62 @@ export function createGraphService(
 
 	// --- Proposal integration ---
 
+	function restoreSnapshot(
+		nodeSnapshot: Map<string, GraphNode>,
+		edgeSnapshot: Map<string, GraphEdge>,
+		eventLength: number,
+		eventIdSnapshot: number,
+	): void {
+		nodes.clear();
+		edges.clear();
+		for (const [id, node] of nodeSnapshot) nodes.set(id, cloneNode(node));
+		for (const [id, edge] of edgeSnapshot) edges.set(id, cloneEdge(edge));
+		events.length = eventLength;
+		nextEventId = eventIdSnapshot;
+	}
+
 	function applyConfirmedProposals(
 		proposals: GraphOperationProposal[],
 	): GraphServiceEvent[] {
+		const nodeSnapshot = new Map(
+			[...nodes.entries()].map(([id, node]) => [id, cloneNode(node)]),
+		);
+		const edgeSnapshot = new Map(
+			[...edges.entries()].map(([id, edge]) => [id, cloneEdge(edge)]),
+		);
+		const eventLength = events.length;
+		const eventIdSnapshot = nextEventId;
 		const collectedEvents: GraphServiceEvent[] = [];
-		for (const proposal of proposals) {
-			let event: GraphServiceEvent;
-			if (proposal.type === "create_node") {
-				if (nodes.has(proposal.node.id)) {
-					// Idempotent: boundary deduplicates creates; a confirmed
-					// duplicate create on an already-present node is a no-op.
-					continue;
+		try {
+			for (const proposal of proposals) {
+				let event: GraphServiceEvent;
+				if (proposal.type === "create_node") {
+					if (nodes.has(proposal.node.id)) {
+						// Idempotent: boundary deduplicates creates; a confirmed
+						// duplicate create on an already-present node is a no-op.
+						continue;
+					}
+					event = createNode(proposal.node);
+				} else if (proposal.type === "create_edge") {
+					if (edges.has(proposal.edge.id)) {
+						// Idempotent: duplicate confirmed create on an existing edge.
+						continue;
+					}
+					event = createEdge(proposal.edge);
+				} else if (proposal.type === "update_node") {
+					event = updateNode(proposal.nodeId, proposal.patch);
+				} else {
+					throw new Error(
+						`Unknown proposal type: ${(proposal as GraphOperationProposal).type}`,
+					);
 				}
-				event = createNode(proposal.node);
-			} else if (proposal.type === "create_edge") {
-				if (edges.has(proposal.edge.id)) {
-					// Idempotent: duplicate confirmed create on an existing edge.
-					continue;
-				}
-				event = createEdge(proposal.edge);
-			} else if (proposal.type === "update_node") {
-				event = updateNode(proposal.nodeId, proposal.patch);
-			} else {
-				throw new Error(
-					`Unknown proposal type: ${(proposal as GraphOperationProposal).type}`,
-				);
+				collectedEvents.push(event);
 			}
-			collectedEvents.push(event);
+			return collectedEvents;
+		} catch (error) {
+			restoreSnapshot(nodeSnapshot, edgeSnapshot, eventLength, eventIdSnapshot);
+			throw error;
 		}
-		return collectedEvents;
 	}
 
 	function applyProposalsWithDecisions(

@@ -157,21 +157,31 @@ export function createPersistentGraphService(
 		if (!current) throw new Error(`Missing node: ${id}`);
 		const before = structuredClone(current);
 
-		// Cascade: delete edges referencing this node
+		// Cascade: delete edges referencing this node. Roll back already-deleted
+		// edges if a later edge delete fails so the node never survives partially
+		// disconnected.
 		const allEdges = await repo.listEdges();
-		const cascadedIds: string[] = [];
-		for (const e of allEdges) {
-			if (e.fromNodeId === id || e.toNodeId === id) {
-				cascadedIds.push(e.id);
+		const cascadedEdges = allEdges.filter(
+			(e) => e.fromNodeId === id || e.toNodeId === id,
+		);
+		const deletedEdges: GraphEdge[] = [];
+		try {
+			for (const e of cascadedEdges) {
 				await repo.deleteEdge(e.id);
+				deletedEdges.push(structuredClone(e) as GraphEdge);
 			}
+		} catch (error) {
+			for (const edge of deletedEdges.reverse()) {
+				await repo.createEdge(edge);
+			}
+			throw error;
 		}
 
 		await repo.deleteNode(id);
 		const event = emit("graph.node.deleted", {
 			nodeId: id,
 			before,
-			cascadedEdgeIds: cascadedIds,
+			cascadedEdgeIds: cascadedEdges.map((e) => e.id),
 		});
 		await repo.saveEvent(event);
 		return event;

@@ -11,6 +11,16 @@ export interface Company {
 
 const companies = new Map<string, Company>();
 
+export class CompanySlugConflictError extends Error {
+	constructor(
+		readonly slug: string,
+		readonly existingId: string,
+	) {
+		super(`Company slug already exists: ${slug}`);
+		this.name = "CompanySlugConflictError";
+	}
+}
+
 // Seed the demo company
 companies.set("demo-corp", {
 	id: "demo-corp",
@@ -25,7 +35,14 @@ export function createCompany(name: string): Company {
 		.replace(/[^a-z0-9]+/g, "-")
 		.replace(/^-|-$/g, "")
 		.slice(0, 48);
+	if (!slug) {
+		throw new Error("Company name must produce a non-empty slug");
+	}
 	const id = `company-${slug}`;
+
+	if (companies.has(id)) {
+		throw new CompanySlugConflictError(slug, id);
+	}
 
 	const company: Company = {
 		id,

@@ -35,14 +35,24 @@ export interface IngestOptions {
 	existingNodeIds?: Set<string>;
 }
 
+function stableHash(value: string): string {
+	let hash = 0x811c9dc5;
+	for (let i = 0; i < value.length; i += 1) {
+		hash ^= value.charCodeAt(i);
+		hash = Math.imul(hash, 0x01000193);
+	}
+	return (hash >>> 0).toString(36).padStart(8, "0").slice(0, 8);
+}
+
 /** Accent-stripped, deterministic slug so ids are stable across re-runs. */
 function slug(s: string): string {
-	return s
+	const normalized = s
 		.normalize("NFD")
 		.replace(/[̀-ͯ]/g, "")
 		.toLowerCase()
 		.replace(/[^a-z0-9]+/g, "-")
 		.replace(/^-|-$/g, "");
+	return normalized || stableHash(s);
 }
 
 /**
@@ -140,11 +150,16 @@ export function mapEmployeeRows(
 			fromNodeId: personId,
 			toNodeId: unitId,
 		};
-		add({ type: "create_edge", edge, reason: `Team membership from ${opts.source}` });
+		add({
+			type: "create_edge",
+			edge,
+			reason: `Team membership from ${opts.source}`,
+		});
 	}
 
 	const people = proposals.filter(
-		(p) => p.proposal.type === "create_node" && p.proposal.node.type === "Person",
+		(p) =>
+			p.proposal.type === "create_node" && p.proposal.node.type === "Person",
 	).length;
 	return {
 		source: opts.source,
@@ -195,7 +210,8 @@ export function ingestText(text: string, opts: IngestOptions): IngestResult {
 		opts.source,
 	);
 	const people = proposals.filter(
-		(p) => p.proposal.type === "create_node" && p.proposal.node.type === "Person",
+		(p) =>
+			p.proposal.type === "create_node" && p.proposal.node.type === "Person",
 	).length;
 	return {
 		source: opts.source,

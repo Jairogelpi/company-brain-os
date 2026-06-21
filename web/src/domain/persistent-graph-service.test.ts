@@ -129,6 +129,44 @@ describe("PersistentGraphService (in-memory repo)", () => {
 			expect(await service.readNode(person.id)).toBeUndefined();
 			expect(await service.readEdge(mastery.id)).toBeUndefined();
 		});
+
+		it("preserves node and cascade edges when an edge delete fails", async () => {
+			const repo = createInMemoryGraphRepository();
+			const originalDeleteEdge = repo.deleteEdge.bind(repo);
+			let deleteAttempts = 0;
+			repo.deleteEdge = async (id) => {
+				deleteAttempts += 1;
+				if (deleteAttempts === 2) throw new Error("delete edge failed");
+				await originalDeleteEdge(id);
+			};
+			const service = createPersistentGraphService(repo, {
+				actorId: "test",
+				companyId: "test-corp",
+			});
+			const secondKnowledge: KnowledgeNode = {
+				...knowledge,
+				id: "node-knowledge-second",
+				name: "Second knowledge",
+			};
+			const secondMastery: GraphEdge = {
+				...mastery,
+				id: "edge-masters-pedro-second",
+				toNodeId: secondKnowledge.id,
+			};
+			await service.createNode(person);
+			await service.createNode(knowledge);
+			await service.createNode(secondKnowledge);
+			await service.createEdge(mastery);
+			await service.createEdge(secondMastery);
+
+			await expect(service.deleteNode(person.id)).rejects.toThrow(
+				/delete edge failed/,
+			);
+
+			expect(await service.readNode(person.id)).toBeDefined();
+			expect(await service.readEdge(mastery.id)).toBeDefined();
+			expect(await service.readEdge(secondMastery.id)).toBeDefined();
+		});
 	});
 
 	describe("edge CRUD", () => {
