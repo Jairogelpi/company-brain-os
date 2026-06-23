@@ -26,3 +26,6 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 *.swp
+
+# User scratch reference image
+/image.png
