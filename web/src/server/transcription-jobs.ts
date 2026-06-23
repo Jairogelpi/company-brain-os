@@ -184,8 +184,25 @@ export function createDrizzleTranscriptionJobStore(
 	};
 }
 
-export const defaultTranscriptionJobStore =
-	createDrizzleTranscriptionJobStore();
+let cachedDefaultStore: TranscriptionJobStore | undefined;
+
+function resolveDefaultStore(): TranscriptionJobStore {
+	return (cachedDefaultStore ??= createDrizzleTranscriptionJobStore());
+}
+
+/**
+ * Default DB-backed store. The Drizzle/pg connection is created lazily on
+ * first use (not at import) so `next build` can collect page data without a
+ * DATABASE_URL — the connection is only resolved when a handler actually runs.
+ */
+export const defaultTranscriptionJobStore: TranscriptionJobStore = {
+	createJob: (input) => resolveDefaultStore().createJob(input),
+	getJob: (id) => resolveDefaultStore().getJob(id),
+	updateStatus: (id, status, patch) =>
+		resolveDefaultStore().updateStatus(id, status, patch),
+	claimQueued: (limit) => resolveDefaultStore().claimQueued(limit),
+	reclaimProcessing: () => resolveDefaultStore().reclaimProcessing(),
+};
 
 export function createJob(input: CreateTranscriptionJobInput) {
 	return defaultTranscriptionJobStore.createJob(input);
