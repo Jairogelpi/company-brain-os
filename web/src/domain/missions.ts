@@ -16,6 +16,12 @@ export interface Mission {
 	targetNodeId: string;
 	targetNodeName: string;
 	assigneeIds: string[];
+	/** Single assigned employee (the one expected to deliver). */
+	assigneeId?: string;
+	/** Boss-authored detailed instructions of what to do. */
+	instructions?: string;
+	/** Reason the latest submission was rejected (shown to the employee). */
+	rejectionReason?: string;
 	priority: MissionPriority;
 	dueDate?: string;
 	status: MissionStatus;
@@ -28,6 +34,26 @@ export interface Mission {
 	suggestedTrainerName?: string;
 	rationale?: string;
 	riskNote?: string;
+}
+
+export type SubmissionStatus = "pending" | "approved" | "rejected";
+
+/** An employee's deliverable for a mission: an uploaded file or written text. */
+export interface MissionSubmission {
+	id: string;
+	missionId: string;
+	authorId: string;
+	kind: "file" | "text";
+	text?: string;
+	storageUrl?: string;
+	fileName?: string;
+	mimeType?: string;
+	mediaType?: string;
+	status: SubmissionStatus;
+	reviewerId?: string;
+	rejectionReason?: string;
+	createdAt: string;
+	reviewedAt?: string;
 }
 
 export type MediaType =

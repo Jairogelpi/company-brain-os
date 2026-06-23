@@ -24,6 +24,9 @@ describe("mission enrichment mapping", () => {
 			suggestedTrainerName: "Ada",
 			rationale: "critical",
 			riskNote: "risk",
+			instructions: "Record the SOP",
+			assigneeId: "person-laura",
+			rejectionReason: null,
 		};
 
 		expect(rowToMission(row)).toMatchObject({
@@ -32,6 +35,8 @@ describe("mission enrichment mapping", () => {
 			suggestedTrainerName: "Ada",
 			rationale: "critical",
 			riskNote: "risk",
+			instructions: "Record the SOP",
+			assigneeId: "person-laura",
 		});
 	});
 
@@ -56,10 +61,15 @@ describe("mission enrichment mapping", () => {
 			suggestedTrainerName: null,
 			rationale: null,
 			riskNote: null,
+			instructions: null,
+			assigneeId: null,
+			rejectionReason: null,
 		};
 
 		const mission = rowToMission(row);
 		expect(mission.detailedSteps).toBeUndefined();
 		expect(mission.rationale).toBeUndefined();
+		expect(mission.instructions).toBeUndefined();
+		expect(mission.assigneeId).toBeUndefined();
 	});
 });

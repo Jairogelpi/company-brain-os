@@ -227,10 +227,47 @@ export const missions = pgTable(
 		suggestedTrainerName: text("suggested_trainer_name"),
 		rationale: text("rationale"),
 		riskNote: text("risk_note"),
+		// Boss-authored detailed instructions + the single assigned employee.
+		instructions: text("instructions"),
+		assigneeId: text("assignee_id"),
+		// Most recent rejection reason surfaced back to the employee.
+		rejectionReason: text("rejection_reason"),
 	},
 	(table) => [
 		index("missions_company_idx").on(table.companyId),
 		index("missions_status_idx").on(table.status),
+	],
+);
+
+// Employee deliverables for a mission: an uploaded file (pdf/word/excel/
+// audio/video) or written text. Reviewed (approved/rejected) by the boss.
+export const missionSubmissions = pgTable(
+	"mission_submissions",
+	{
+		id: text("id").primaryKey(),
+		companyId: text("company_id").notNull().default("default"),
+		missionId: text("mission_id").notNull(),
+		authorId: text("author_id").notNull(),
+		kind: text("kind").$type<"file" | "text">().notNull(),
+		text: text("text"),
+		storageUrl: text("storage_url"),
+		fileName: text("file_name"),
+		mimeType: text("mime_type"),
+		mediaType: text("media_type"),
+		status: text("status")
+			.$type<"pending" | "approved" | "rejected">()
+			.notNull()
+			.default("pending"),
+		reviewerId: text("reviewer_id"),
+		rejectionReason: text("rejection_reason"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+	},
+	(table) => [
+		index("mission_submissions_company_idx").on(table.companyId),
+		index("mission_submissions_mission_idx").on(table.missionId),
 	],
 );
 

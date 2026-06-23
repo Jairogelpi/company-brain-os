@@ -27,6 +27,9 @@ const ALLOWED: Record<string, string> = {
 	"text/markdown": "md",
 	"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
 	"application/vnd.ms-excel": "xls",
+	"application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+		"docx",
+	"application/msword": "doc",
 };
 
 // Extensions we will serve inline (raster media + pdf + a/v). No svg, no html.
@@ -60,6 +63,8 @@ const EXT_CONTENT_TYPE: Record<string, string> = {
 	md: "text/markdown; charset=utf-8",
 	xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 	xls: "application/vnd.ms-excel",
+	docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+	doc: "application/msword",
 };
 
 export function isAllowedMime(mime: string): boolean {

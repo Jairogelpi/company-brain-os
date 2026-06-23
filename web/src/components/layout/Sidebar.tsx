@@ -13,6 +13,7 @@ import {
 	Dna,
 	SlidersHorizontal,
 	Share2,
+	ClipboardCheck,
 	Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -102,6 +103,15 @@ const NAV_ITEMS: Item[] = [
 		icon: (
 			<Icon>
 				<Share2 />
+			</Icon>
+		),
+	},
+	{
+		href: "/missions",
+		label: "Missions",
+		icon: (
+			<Icon>
+				<ClipboardCheck />
 			</Icon>
 		),
 	},
