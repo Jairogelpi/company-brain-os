@@ -50,6 +50,20 @@
       "when": 1782007505843,
       "tag": "0006_keen_white_tiger",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1782007505845,
+      "tag": "0008_transcription_jobs",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1782007505846,
+      "tag": "0009_succession_enrichment",
+      "breakpoints": true
     }
   ]
 }

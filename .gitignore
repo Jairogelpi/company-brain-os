@@ -19,9 +19,6 @@ uploads/
 *.log
 npm-debug.log*
 
-# Drizzle
-web/drizzle/meta/
-
 # Playwright MCP artifacts
 .playwright-mcp/
 
