@@ -43,9 +43,12 @@ function job(overrides: Partial<TranscriptionJob> = {}): TranscriptionJob {
 }
 
 async function call(id = "job-1") {
-	const res = await GET(new Request(`http://localhost/api/transcribe/jobs/${id}`), {
-		params: Promise.resolve({ id }),
-	});
+	const res = await GET(
+		new Request(`http://localhost/api/transcribe/jobs/${id}`),
+		{
+			params: Promise.resolve({ id }),
+		},
+	);
 	return { status: res.status, json: await res.json() };
 }
 

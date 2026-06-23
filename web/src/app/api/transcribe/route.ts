@@ -28,7 +28,10 @@ export async function POST(request: Request) {
 		return NextResponse.json({ error: "Invalid filename" }, { status: 400 });
 	}
 	if (!isMedia(mimeType)) {
-		return NextResponse.json({ error: "Only audio/video can be transcribed" }, { status: 400 });
+		return NextResponse.json(
+			{ error: "Only audio/video can be transcribed" },
+			{ status: 400 },
+		);
 	}
 
 	const storage = getStorage();

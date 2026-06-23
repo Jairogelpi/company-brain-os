@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { TranscriptionResult, TranscriptionService } from "@/ai/transcription";
+import type {
+	TranscriptionResult,
+	TranscriptionService,
+} from "@/ai/transcription";
 import { TranscriptionError } from "@/ai/transcription";
 import { transcriptionJobs } from "@/db/schema";
 import {
@@ -54,7 +57,10 @@ describe("transcription_jobs schema", () => {
 	});
 
 	it("types inserts with queued as the default status", () => {
-		const row: typeof transcriptionJobs.$inferInsert = { ...baseJob, id: "job-1" };
+		const row: typeof transcriptionJobs.$inferInsert = {
+			...baseJob,
+			id: "job-1",
+		};
 		expect(row.status ?? "queued").toBe("queued");
 	});
 });
@@ -162,7 +168,9 @@ describe("transcription worker", () => {
 			"companyA",
 			"interview.mp3",
 			"text",
-			expect.arrayContaining([expect.objectContaining({ type: "create_node" })]),
+			expect.arrayContaining([
+				expect.objectContaining({ type: "create_node" }),
+			]),
 		);
 	});
 

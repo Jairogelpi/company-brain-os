@@ -1,7 +1,11 @@
 import { and, eq } from "drizzle-orm";
 import { createDb } from "@/db";
 import { missions } from "@/db/schema";
-import { VALID_TRANSITIONS, type Mission, type MissionStatus } from "@/domain/missions";
+import {
+	VALID_TRANSITIONS,
+	type Mission,
+	type MissionStatus,
+} from "@/domain/missions";
 
 /** DB-backed missions, scoped to a company (tenant). */
 
@@ -49,7 +53,9 @@ export async function saveMissions(
 	if (rows.length === 0) return 0;
 	await createDb()
 		.insert(missions)
-		.values(rows.map((r) => ({ ...r, companyId, personId, status: "open" as const })));
+		.values(
+			rows.map((r) => ({ ...r, companyId, personId, status: "open" as const })),
+		);
 	return rows.length;
 }
 
@@ -85,7 +91,10 @@ export async function transitionMissionStatus(
 	}
 	await db
 		.update(missions)
-		.set({ status: to, closedAt: to === "closed" ? new Date() : current.closedAt })
+		.set({
+			status: to,
+			closedAt: to === "closed" ? new Date() : current.closedAt,
+		})
 		.where(and(eq(missions.companyId, companyId), eq(missions.id, id)));
 	return rowToMission({ ...current, status: to });
 }

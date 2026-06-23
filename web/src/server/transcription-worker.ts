@@ -36,7 +36,9 @@ async function completeWithTranscript(
 	provider: TranscriptionProvider,
 	text: string,
 	noSpeech: boolean,
-	options: Required<Pick<TranscriptionWorkerOptions, "store" | "ingest" | "save">>,
+	options: Required<
+		Pick<TranscriptionWorkerOptions, "store" | "ingest" | "save">
+	>,
 ): Promise<void> {
 	await options.store.updateStatus(job.id, "completed", {
 		transcript: text,
@@ -102,7 +104,8 @@ export function startTranscriptionWorker(
 	const intervalMs = configuredInterval || 5000;
 	void store.reclaimProcessing();
 	const runOnce =
-		options.runOnce ?? (() => runTranscriptionWorkerOnce({ ...options, store }));
+		options.runOnce ??
+		(() => runTranscriptionWorkerOnce({ ...options, store }));
 	const timer = setInterval(() => {
 		void runOnce();
 	}, intervalMs);

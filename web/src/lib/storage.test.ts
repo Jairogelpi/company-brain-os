@@ -13,7 +13,9 @@ describe("disk storage", () => {
 	});
 
 	it("reports stored object size", async () => {
-		process.env.STORAGE_DIR = await mkdtemp(join(tmpdir(), "company-brain-os-"));
+		process.env.STORAGE_DIR = await mkdtemp(
+			join(tmpdir(), "company-brain-os-"),
+		);
 		resetStorageForTests();
 		const storage = getStorage();
 

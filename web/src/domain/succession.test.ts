@@ -41,7 +41,10 @@ describe("succession — generatePlaybook", () => {
 		const k2 = knowledge("k-low", "archivar albaranes", "low");
 		const graph = {
 			nodes: [pedro, k1, k2],
-			edges: [masters("person-pedro", "k-crit"), masters("person-pedro", "k-low")],
+			edges: [
+				masters("person-pedro", "k-crit"),
+				masters("person-pedro", "k-low"),
+			],
 		};
 
 		const pb = generatePlaybook("person-pedro", graph);
@@ -68,7 +71,11 @@ describe("succession — generatePlaybook", () => {
 	it("falls back to bus factor when no exposure is given", () => {
 		const a = knowledge("k-a", "A", "high"); // Pedro sole expert → busFactor 1
 		const b = knowledge("k-b", "B", "high"); // also has María → busFactor 2
-		const maria: GraphNode = { id: "person-maria", type: "Person", name: "María" };
+		const maria: GraphNode = {
+			id: "person-maria",
+			type: "Person",
+			name: "María",
+		};
 		const graph = {
 			nodes: [pedro, maria, a, b],
 			edges: [

@@ -184,7 +184,8 @@ export function createDrizzleTranscriptionJobStore(
 	};
 }
 
-export const defaultTranscriptionJobStore = createDrizzleTranscriptionJobStore();
+export const defaultTranscriptionJobStore =
+	createDrizzleTranscriptionJobStore();
 
 export function createJob(input: CreateTranscriptionJobInput) {
 	return defaultTranscriptionJobStore.createJob(input);

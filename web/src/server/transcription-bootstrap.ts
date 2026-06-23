@@ -1,7 +1,4 @@
-import {
-	startTranscriptionWorker,
-	type StopFn,
-} from "./transcription-worker";
+import { startTranscriptionWorker, type StopFn } from "./transcription-worker";
 
 let stopWorker: StopFn | null = null;
 

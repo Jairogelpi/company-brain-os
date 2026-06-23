@@ -62,11 +62,13 @@ function createS3Adapter(): StorageAdapter {
 	// Indirect specifier keeps TS/bundler from resolving an optional dep.
 	const sdkSpecifier = "@aws-sdk/client-s3";
 	async function client() {
-		const mod = await import(/* webpackIgnore: true */ sdkSpecifier).catch(() => {
-			throw new Error(
-				"STORAGE_DRIVER=s3 needs @aws-sdk/client-s3 (run: npm i @aws-sdk/client-s3).",
-			);
-		});
+		const mod = await import(/* webpackIgnore: true */ sdkSpecifier).catch(
+			() => {
+				throw new Error(
+					"STORAGE_DRIVER=s3 needs @aws-sdk/client-s3 (run: npm i @aws-sdk/client-s3).",
+				);
+			},
+		);
 		return {
 			mod,
 			s3: new mod.S3Client({

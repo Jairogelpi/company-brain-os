@@ -22,6 +22,9 @@ npm-debug.log*
 # Drizzle
 web/drizzle/meta/
 
+# Playwright MCP artifacts
+.playwright-mcp/
+
 # OS / editor
 .DS_Store
 Thumbs.db

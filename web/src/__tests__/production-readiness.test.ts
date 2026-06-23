@@ -131,7 +131,9 @@ describe("Multi-company", () => {
 
 describe("Transcription", () => {
 	it("transcription service degrades explicitly when disabled", async () => {
-		const service = createTranscriptionService({ TRANSCRIPTION_PROVIDER: "none" });
+		const service = createTranscriptionService({
+			TRANSCRIPTION_PROVIDER: "none",
+		});
 		const result = await service.transcribe("test.mp3", "audio/mpeg");
 
 		expect(result).toEqual({
@@ -143,8 +145,13 @@ describe("Transcription", () => {
 	});
 
 	it("transcribeBuffer also degrades explicitly when disabled", async () => {
-		const service = createTranscriptionService({ TRANSCRIPTION_PROVIDER: "none" });
-		const result = await service.transcribeBuffer(Buffer.from("test"), "audio/wav");
+		const service = createTranscriptionService({
+			TRANSCRIPTION_PROVIDER: "none",
+		});
+		const result = await service.transcribeBuffer(
+			Buffer.from("test"),
+			"audio/wav",
+		);
 
 		expect(result.provider).toBe("unavailable");
 		expect(result.text).toBe("");

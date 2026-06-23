@@ -5,7 +5,11 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useGraph } from "@/components/useGraph";
 import { getLlmConfig } from "@/ai/client";
 import { enrichPlaybookWithLLM } from "@/ai/succession-enrichment";
-import { generatePlaybook, type PlaybookAction, type Playbook } from "@/domain/succession";
+import {
+	generatePlaybook,
+	type PlaybookAction,
+	type Playbook,
+} from "@/domain/succession";
 import { detectAllRisks } from "@/domain/risk-engine";
 import { exposureByNode } from "@/domain/financial-exposure";
 import {
@@ -61,7 +65,9 @@ export default function SuccessionPage() {
 		try {
 			const cfg = getLlmConfig();
 			setPlaybook(
-				cfg ? await enrichPlaybookWithLLM(heuristic, data, { llm: cfg }) : heuristic,
+				cfg
+					? await enrichPlaybookWithLLM(heuristic, data, { llm: cfg })
+					: heuristic,
 			);
 		} catch {
 			setPlaybook(heuristic);
@@ -106,7 +112,9 @@ export default function SuccessionPage() {
 
 	const actionMarkdown = (a: PlaybookAction, i: number) => [
 		`${i + 1}. **${a.action}** ${a.targetDate ? `(by ${a.targetDate})` : ""} — ${a.criticality ?? "—"}, bus factor ${a.busFactor}`,
-		...(a.suggestedTrainerName ? [`   - Suggested trainer: ${a.suggestedTrainerName}`] : []),
+		...(a.suggestedTrainerName
+			? [`   - Suggested trainer: ${a.suggestedTrainerName}`]
+			: []),
 		...(a.rationale ? [`   - Rationale: ${a.rationale}`] : []),
 		...(a.riskNote ? [`   - Risk: ${a.riskNote}`] : []),
 		...(a.detailedSteps?.length
@@ -218,7 +226,9 @@ export default function SuccessionPage() {
 											{a.criticality && (
 												<Badge
 													variant={
-														a.criticality === "high" ? "destructive" : "secondary"
+														a.criticality === "high"
+															? "destructive"
+															: "secondary"
 													}
 												>
 													{a.criticality}

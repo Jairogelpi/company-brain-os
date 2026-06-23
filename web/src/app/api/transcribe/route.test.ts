@@ -43,7 +43,9 @@ describe("POST /api/transcribe", () => {
 	beforeEach(() => {
 		requireApiUserMock.mockReset().mockResolvedValue(authedUser());
 		sizeMock.mockReset().mockResolvedValue(1024);
-		createJobMock.mockReset().mockResolvedValue({ id: "job-1", status: "queued" });
+		createJobMock
+			.mockReset()
+			.mockResolvedValue({ id: "job-1", status: "queued" });
 	});
 
 	it("returns 401 when unauthenticated", async () => {
@@ -58,7 +60,10 @@ describe("POST /api/transcribe", () => {
 	});
 
 	it("rejects invalid filenames", async () => {
-		const { status } = await call({ filename: "../x.mp3", mimeType: "audio/mpeg" });
+		const { status } = await call({
+			filename: "../x.mp3",
+			mimeType: "audio/mpeg",
+		});
 
 		expect(status).toBe(400);
 		expect(createJobMock).not.toHaveBeenCalled();

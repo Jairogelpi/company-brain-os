@@ -63,7 +63,9 @@ function response(actions: unknown[]): string {
 describe("enrichPlaybookWithLLM", () => {
 	beforeEach(() => {
 		chatCompletionMock.mockReset();
-		getLlmConfigMock.mockReset().mockReturnValue({ apiKey: "x", model: "stub" });
+		getLlmConfigMock
+			.mockReset()
+			.mockReturnValue({ apiKey: "x", model: "stub" });
 	});
 
 	it("enriches actions while preserving deterministic heuristic fields", async () => {
@@ -89,9 +91,15 @@ describe("enrichPlaybookWithLLM", () => {
 		expect(action.suggestedTrainerName).toBe("Ada");
 		expect(action.rationale).toContain("critical");
 		expect(action.riskNote).toContain("risk");
-		expect(action.priorityScore).toBe(pb.actions.find((a) => a.knowledgeId === "k-crit")!.priorityScore);
-		expect(action.action).toBe(pb.actions.find((a) => a.knowledgeId === "k-crit")!.action);
-		expect(action.targetDate).toBe(pb.actions.find((a) => a.knowledgeId === "k-crit")!.targetDate);
+		expect(action.priorityScore).toBe(
+			pb.actions.find((a) => a.knowledgeId === "k-crit")!.priorityScore,
+		);
+		expect(action.action).toBe(
+			pb.actions.find((a) => a.knowledgeId === "k-crit")!.action,
+		);
+		expect(action.targetDate).toBe(
+			pb.actions.find((a) => a.knowledgeId === "k-crit")!.targetDate,
+		);
 	});
 
 	it("returns the input unchanged when no LLM is configured", async () => {
@@ -107,10 +115,14 @@ describe("enrichPlaybookWithLLM", () => {
 	it("falls back unchanged when the LLM rejects or returns malformed JSON", async () => {
 		const pb = playbook();
 		chatCompletionMock.mockRejectedValueOnce(new Error("network"));
-		await expect(enrichPlaybookWithLLM(pb, graph(), { llm: { apiKey: "x" } })).resolves.toEqual(pb);
+		await expect(
+			enrichPlaybookWithLLM(pb, graph(), { llm: { apiKey: "x" } }),
+		).resolves.toEqual(pb);
 
 		chatCompletionMock.mockResolvedValueOnce("Sorry, no JSON here");
-		await expect(enrichPlaybookWithLLM(pb, graph(), { llm: { apiKey: "x" } })).resolves.toEqual(pb);
+		await expect(
+			enrichPlaybookWithLLM(pb, graph(), { llm: { apiKey: "x" } }),
+		).resolves.toEqual(pb);
 	});
 
 	it("keeps valid partial entries and skips malformed or missing actions", async () => {
@@ -129,11 +141,19 @@ describe("enrichPlaybookWithLLM", () => {
 			]),
 		);
 
-		const enriched = await enrichPlaybookWithLLM(pb, g, { llm: { apiKey: "x" } });
+		const enriched = await enrichPlaybookWithLLM(pb, g, {
+			llm: { apiKey: "x" },
+		});
 
-		expect(enriched.actions.map((a) => a.knowledgeId)).toEqual(pb.actions.map((a) => a.knowledgeId));
-		expect(enriched.actions.find((a) => a.knowledgeId === "k-crit")?.detailedSteps).toEqual(["s1"]);
-		expect(enriched.actions.find((a) => a.knowledgeId === "k-safety")?.detailedSteps).toEqual(["s2"]);
+		expect(enriched.actions.map((a) => a.knowledgeId)).toEqual(
+			pb.actions.map((a) => a.knowledgeId),
+		);
+		expect(
+			enriched.actions.find((a) => a.knowledgeId === "k-crit")?.detailedSteps,
+		).toEqual(["s1"]);
+		expect(
+			enriched.actions.find((a) => a.knowledgeId === "k-safety")?.detailedSteps,
+		).toEqual(["s2"]);
 	});
 
 	it("drops ungrounded trainer names but keeps other enrichment", async () => {
@@ -151,9 +171,9 @@ describe("enrichPlaybookWithLLM", () => {
 			]),
 		);
 
-		const action = (await enrichPlaybookWithLLM(pb, g, { llm: { apiKey: "x" } })).actions.find(
-			(a) => a.knowledgeId === "k-crit",
-		)!;
+		const action = (
+			await enrichPlaybookWithLLM(pb, g, { llm: { apiKey: "x" } })
+		).actions.find((a) => a.knowledgeId === "k-crit")!;
 
 		expect(action.suggestedTrainerId).toBeUndefined();
 		expect(action.suggestedTrainerName).toBeUndefined();
@@ -162,11 +182,14 @@ describe("enrichPlaybookWithLLM", () => {
 	});
 
 	it("builds a bounded prompt containing only relevant knowledge and trainers", async () => {
-		const unrelated = Array.from({ length: 50 }, (_, i): GraphNode => ({
-			id: `person-unrelated-${i}`,
-			type: "Person",
-			name: `Unrelated ${i}`,
-		}));
+		const unrelated = Array.from(
+			{ length: 50 },
+			(_, i): GraphNode => ({
+				id: `person-unrelated-${i}`,
+				type: "Person",
+				name: `Unrelated ${i}`,
+			}),
+		);
 		const g = graph(unrelated);
 		chatCompletionMock.mockResolvedValue(response([]));
 
@@ -193,6 +216,8 @@ describe("enrichPlaybookWithLLM", () => {
 		const second = await enrichPlaybookWithLLM(pb, g, { llm: { apiKey: "x" } });
 
 		expect(first).toEqual(second);
-		expect(first.actions.map((a) => a.knowledgeId)).toEqual(pb.actions.map((a) => a.knowledgeId));
+		expect(first.actions.map((a) => a.knowledgeId)).toEqual(
+			pb.actions.map((a) => a.knowledgeId),
+		);
 	});
 });

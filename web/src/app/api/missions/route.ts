@@ -91,6 +91,9 @@ export async function PATCH(request: Request) {
 		);
 		return NextResponse.json({ mission });
 	} catch (err) {
-		return NextResponse.json({ error: (err as Error).message }, { status: 400 });
+		return NextResponse.json(
+			{ error: (err as Error).message },
+			{ status: 400 },
+		);
 	}
 }

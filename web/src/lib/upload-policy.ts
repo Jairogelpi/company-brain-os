@@ -8,7 +8,8 @@
  */
 
 export const MAX_UPLOAD_BYTES = 50 * 1024 * 1024; // 50 MB
-export const MAX_MEDIA_BYTES = Number(process.env.MAX_MEDIA_BYTES) || 100 * 1024 * 1024; // 100 MB
+export const MAX_MEDIA_BYTES =
+	Number(process.env.MAX_MEDIA_BYTES) || 100 * 1024 * 1024; // 100 MB
 
 // Allowed MIME → canonical extension. SVG intentionally excluded.
 const ALLOWED: Record<string, string> = {

@@ -101,13 +101,11 @@ describe("WhisperCppService", () => {
 	it("transcribes audio via multipart POST and returns whisper-cpp provider", async () => {
 		vi.stubGlobal(
 			"fetch",
-			vi
-				.fn()
-				.mockResolvedValue(
-					new Response(JSON.stringify({ text: "hello world" }), {
-						status: 200,
-					}),
-				),
+			vi.fn().mockResolvedValue(
+				new Response(JSON.stringify({ text: "hello world" }), {
+					status: 200,
+				}),
+			),
 		);
 		const r = await svc().transcribeBuffer(Buffer.from("audio"), "audio/mpeg");
 		expect(r.text).toBe("hello world");
@@ -118,13 +116,11 @@ describe("WhisperCppService", () => {
 	it("transcribes video audio track (video/webm)", async () => {
 		vi.stubGlobal(
 			"fetch",
-			vi
-				.fn()
-				.mockResolvedValue(
-					new Response(JSON.stringify({ text: "meeting notes" }), {
-						status: 200,
-					}),
-				),
+			vi.fn().mockResolvedValue(
+				new Response(JSON.stringify({ text: "meeting notes" }), {
+					status: 200,
+				}),
+			),
 		);
 		const r = await svc().transcribeBuffer(Buffer.from("video"), "video/webm");
 		expect(r.text).toBe("meeting notes");
