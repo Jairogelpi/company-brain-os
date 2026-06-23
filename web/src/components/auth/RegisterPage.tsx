@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import GraphHero from "./GraphHero";
+import GraphHeroPlayer from "./GraphHeroPlayer";
 import {
 	normalizeSignupBody,
 	validateSignup,
@@ -80,7 +80,7 @@ export default function RegisterPage() {
 	};
 
 	return (
-		<div className="grid min-h-screen lg:grid-cols-2">
+		<div className="grid min-h-screen lg:grid-cols-[3fr_7fr]">
 			<div className="relative hidden flex-col justify-between overflow-hidden border-r border-border bg-foreground p-12 text-background lg:flex">
 				<div className="relative flex items-center gap-2.5">
 					<span className="flex h-7 w-7 items-center justify-center rounded-md bg-background text-[13px] font-semibold text-foreground">
@@ -99,7 +99,7 @@ export default function RegisterPage() {
 						and critical dependencies.
 					</p>
 					<div className="mt-6 h-48 w-full">
-						<GraphHero />
+						<GraphHeroPlayer />
 					</div>
 				</div>
 

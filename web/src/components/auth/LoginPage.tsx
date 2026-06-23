@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import GraphHero from "./GraphHero";
+import GraphHeroPlayer from "./GraphHeroPlayer";
 
 export default function LoginPage() {
 	const router = useRouter();
@@ -38,7 +38,7 @@ export default function LoginPage() {
 	};
 
 	return (
-		<div className="grid min-h-screen lg:grid-cols-2">
+		<div className="grid min-h-screen lg:grid-cols-[3fr_7fr]">
 			{/* Brand / hero graph */}
 			<div className="relative hidden flex-col justify-between overflow-hidden border-r border-border bg-foreground p-12 text-background lg:flex">
 				<div className="relative flex items-center gap-2.5">
@@ -59,7 +59,7 @@ export default function LoginPage() {
 						</span>
 					</h1>
 					<div className="mt-6 h-48 w-full">
-						<GraphHero />
+						<GraphHeroPlayer />
 					</div>
 				</div>
 

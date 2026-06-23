@@ -1,8 +1,17 @@
+export type HeroNodeType =
+	| "Person"
+	| "Knowledge"
+	| "Process"
+	| "Asset"
+	| "Unit"
+	| "Risk";
+
 export type HeroNode = {
 	id: string;
+	label: string;
 	x: number;
 	y: number;
-	type: "Person" | "Knowledge" | "Process" | "Asset" | "Unit" | "Risk";
+	type: HeroNodeType;
 	critical?: boolean;
 };
 
@@ -10,29 +19,59 @@ export type HeroEdge = {
 	id: string;
 	from: string;
 	to: string;
-	label: "MASTERS" | "DEPENDS_ON" | "REQUIRES";
+	label: "MASTERS" | "LEARNS" | "DEPENDS_ON" | "REQUIRES";
 };
 
+// Compact coordinate space so labelled chips stay legible in the narrow
+// (30%) auth hero panel. Keep nodes/edges inside the safe area.
+export const HERO_VIEW_W = 320;
+export const HERO_VIEW_H = 280;
+export const HERO_NODE_H = 30;
+export const HERO_FONT = 15;
+
+/**
+ * A curated, public-safe example that mirrors the real Company Brain graph:
+ * the same node types, relationships, and a single critical knowledge node
+ * (bus-factor = 1). These are illustrative, not a tenant's private data.
+ */
 export const HERO_NODES: HeroNode[] = [
-	{ id: "pedro", x: 120, y: 160, type: "Person" },
-	{ id: "llenadora", x: 300, y: 100, type: "Knowledge", critical: true },
-	{ id: "produccion", x: 300, y: 260, type: "Process" },
-	{ id: "laura", x: 120, y: 340, type: "Person" },
-	{ id: "planta", x: 480, y: 180, type: "Unit" },
-	{ id: "parada", x: 480, y: 340, type: "Risk" },
-	{ id: "manual", x: 300, y: 420, type: "Asset" },
+	{ id: "marcos", label: "Marcos", x: 62, y: 60, type: "Person" },
+	{ id: "laura", label: "Laura", x: 258, y: 60, type: "Person" },
+	{
+		id: "horno",
+		label: "Horno crítico",
+		x: 160,
+		y: 140,
+		type: "Knowledge",
+		critical: true,
+	},
+	{ id: "pedro", label: "Pedro", x: 60, y: 218, type: "Person" },
+	{ id: "produccion", label: "Producción", x: 252, y: 210, type: "Process" },
+	{ id: "parada", label: "Parada planta", x: 160, y: 252, type: "Risk" },
 ];
 
 export const HERO_EDGES: HeroEdge[] = [
-	{ id: "e1", from: "pedro", to: "llenadora", label: "MASTERS" },
-	{ id: "e2", from: "laura", to: "llenadora", label: "MASTERS" },
-	{ id: "e3", from: "llenadora", to: "produccion", label: "DEPENDS_ON" },
-	{ id: "e4", from: "produccion", to: "planta", label: "REQUIRES" },
-	{ id: "e5", from: "planta", to: "parada", label: "DEPENDS_ON" },
-	{ id: "e6", from: "pedro", to: "produccion", label: "MASTERS" },
-	{ id: "e7", from: "llenadora", to: "manual", label: "REQUIRES" },
-	{ id: "e8", from: "laura", to: "produccion", label: "MASTERS" },
+	{ id: "e1", from: "marcos", to: "horno", label: "MASTERS" },
+	{ id: "e2", from: "laura", to: "horno", label: "LEARNS" },
+	{ id: "e3", from: "horno", to: "produccion", label: "REQUIRES" },
+	{ id: "e4", from: "pedro", to: "produccion", label: "MASTERS" },
+	{ id: "e5", from: "produccion", to: "parada", label: "DEPENDS_ON" },
 ];
+
+/** Product type colours (dot accent) — mirrors the /graph view. */
+export const HERO_TYPE_COLOR: Record<HeroNodeType, string> = {
+	Person: "#6aa3ff",
+	Knowledge: "#f59e0b",
+	Process: "#34d399",
+	Asset: "#cbd5e1",
+	Unit: "#cbd5e1",
+	Risk: "#f87171",
+};
+
+/** Approximate chip width for a label at HERO_FONT, with dot + padding. */
+export function heroChipWidth(label: string): number {
+	return Math.round(36 + label.length * 8.2);
+}
 
 export type RevealStep = {
 	visibleNodes: number[];
