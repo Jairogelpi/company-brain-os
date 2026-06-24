@@ -43,6 +43,10 @@ services:
       AUTH_TRUST_HOST: "true"
       STORAGE_DRIVER: ${STORAGE_DRIVER:-disk}
       STORAGE_DIR: /data/uploads
+      # Optional AI (Gemini) for adaptive interview questions. Falls back to the
+      # fixed question bank when unset.
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
     volumes:
       - uploads:/data/uploads
     depends_on:
