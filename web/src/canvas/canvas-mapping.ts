@@ -37,6 +37,10 @@ const COLOR_MAP: Record<NodeType, TldrawColor> = {
 	Asset: "violet",
 	Unit: "grey",
 	Risk: "red",
+	Client: "light-blue",
+	Supplier: "light-red",
+	Project: "light-violet",
+	System: "light-green",
 };
 
 export function getNodeColor(nodeType: string): TldrawColor {

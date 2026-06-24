@@ -27,7 +27,7 @@ const nodes: (GraphNode | KnowledgeNode)[] = [
 ];
 
 describe("universal graph F0 invariants", () => {
-	it("keeps the universal catalog closed at 6 node types and 7 edge types", () => {
+	it("keeps the universal catalog closed at 10 node types and 7 edge types", () => {
 		expect(NODE_TYPES).toEqual([
 			"Person",
 			"Knowledge",
@@ -35,6 +35,10 @@ describe("universal graph F0 invariants", () => {
 			"Asset",
 			"Unit",
 			"Risk",
+			"Client",
+			"Supplier",
+			"Project",
+			"System",
 		]);
 		expect(EDGE_TYPES).toEqual([
 			"MASTERS",

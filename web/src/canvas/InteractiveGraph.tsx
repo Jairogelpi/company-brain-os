@@ -15,6 +15,10 @@ const TYPE_STYLE: Record<NodeType, { dot: string; glyph: string }> = {
 	Asset: { dot: "#94a3b8", glyph: "▣" },
 	Unit: { dot: "#60a5fa", glyph: "⬡" },
 	Risk: { dot: "var(--color-destructive)", glyph: "⚠" },
+	Client: { dot: "#2dd4bf", glyph: "◎" },
+	Supplier: { dot: "#fb923c", glyph: "◇" },
+	Project: { dot: "#a78bfa", glyph: "▲" },
+	System: { dot: "#38bdf8", glyph: "⌘" },
 };
 
 type View = { tx: number; ty: number; k: number };

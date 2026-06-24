@@ -16,6 +16,10 @@ const TYPE_DOT: Record<NodeType, string> = {
 	Asset: "bg-slate-400",
 	Unit: "bg-blue-400",
 	Risk: "bg-destructive",
+	Client: "bg-teal-400",
+	Supplier: "bg-orange-400",
+	Project: "bg-violet-400",
+	System: "bg-sky-400",
 };
 
 export default function GraphPage() {

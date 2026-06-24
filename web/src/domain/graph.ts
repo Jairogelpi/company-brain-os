@@ -5,6 +5,10 @@ export const NODE_TYPES = [
   "Asset",
   "Unit",
   "Risk",
+  "Client",
+  "Supplier",
+  "Project",
+  "System",
 ] as const;
 
 export type NodeType = (typeof NODE_TYPES)[number];
@@ -85,14 +89,24 @@ const edgeEndpointRules = {
   REQUIRES: [
     { from: "Process", to: "Knowledge" },
     { from: "Process", to: "Asset" },
+    { from: "Process", to: "System" },
+    { from: "Project", to: "Knowledge" },
+    { from: "Project", to: "System" },
   ],
   EXECUTES: [{ from: "Person", to: "Process" }],
-  PRODUCES: [{ from: "Process", to: "Asset" }],
+  PRODUCES: [
+    { from: "Process", to: "Asset" },
+    { from: "Project", to: "Asset" },
+  ],
+  // Wildcard: covers external parties (Client/Supplier) and any other
+  // cross-type dependency, e.g. Process DEPENDS_ON Supplier, Client DEPENDS_ON Process.
   DEPENDS_ON: [{ from: "*", to: "*" }],
   BELONGS_TO: [
     { from: "Person", to: "Unit" },
     { from: "Process", to: "Unit" },
     { from: "Asset", to: "Unit" },
+    { from: "Project", to: "Unit" },
+    { from: "System", to: "Unit" },
   ],
 } as const satisfies Record<EdgeType, readonly { from: NodeType | "*"; to: NodeType | "*" }[]>;
 

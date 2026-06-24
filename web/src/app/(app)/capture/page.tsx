@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
 	createInterviewSession,
 	answerInterviewQuestion,
+	type InterviewQuestion,
 	type InterviewSession,
 } from "@/domain/interview";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -12,6 +13,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+
+/** The key-person and substitute probes ask for a person → show a picker. */
+function questionExpectsPerson(q: InterviewQuestion): boolean {
+	return q.probe === "PERSONA_CLAVE" || q.probe === "SUSTITUTO";
+}
 
 export default function CapturePage() {
 	const { can } = useAuth();
@@ -23,15 +29,37 @@ export default function CapturePage() {
 	const [saving, setSaving] = useState(false);
 	const [saved, setSaved] = useState<number | null>(null);
 	const [err, setErr] = useState("");
+	const [people, setPeople] = useState<{ id: string; name: string }[]>([]);
+	const [picked, setPicked] = useState("");
+	const [level, setLevel] = useState("2");
 
 	const allowed = can("graph.node.create");
 
+	// Company people (graph Person nodes + app users) for the person pickers.
+	useEffect(() => {
+		fetch("/api/people")
+			.then((r) => (r.ok ? r.json() : { people: [] }))
+			.then((d) => setPeople(d.people ?? []))
+			.catch(() => {});
+	}, [saved]);
+
+	const expectsPerson = questionExpectsPerson(session.currentQuestion);
+	const isSubstitute = session.currentQuestion.probe === "SUSTITUTO";
+
 	const submit = () => {
-		const text = input.trim();
+		// When the question asks for a person, prefer the dropdown selection;
+		// for the substitute question, fold in the declared level so the engine
+		// still extracts both. Free text stays as the "new person" fallback.
+		let text = input.trim();
+		if (expectsPerson && picked) {
+			text = isSubstitute ? `${picked} nivel ${level}` : picked;
+		}
 		if (!text) return;
 		setHistory((h) => [...h, { q: session.currentQuestion.text, a: text }]);
 		setSession(answerInterviewQuestion(session, text));
 		setInput("");
+		setPicked("");
+		setLevel("2");
 		setSaved(null);
 	};
 
@@ -100,16 +128,57 @@ export default function CapturePage() {
 							<p className="mt-1.5 text-sm font-medium text-foreground">
 								{session.currentQuestion.text}
 							</p>
-							<div className="mt-4 flex gap-2">
+
+							{expectsPerson && (
+								<div className="mt-4 flex flex-wrap gap-2">
+									<select
+										value={picked}
+										onChange={(e) => setPicked(e.target.value)}
+										disabled={!allowed}
+										className="h-10 min-w-48 flex-1 rounded-md border border-border bg-background px-2 text-sm"
+									>
+										<option value="">Choose a person…</option>
+										{people.map((p) => (
+											<option key={p.id} value={p.name}>
+												{p.name}
+											</option>
+										))}
+									</select>
+									{isSubstitute && (
+										<select
+											value={level}
+											onChange={(e) => setLevel(e.target.value)}
+											disabled={!allowed}
+											className="h-10 rounded-md border border-border bg-background px-2 text-sm"
+											aria-label="Substitute level"
+										>
+											{[0, 1, 2, 3, 4, 5].map((n) => (
+												<option key={n} value={n}>
+													Level {n}
+												</option>
+											))}
+										</select>
+									)}
+								</div>
+							)}
+
+							<div className="mt-2 flex gap-2">
 								<Input
 									value={input}
 									onChange={(e) => setInput(e.target.value)}
 									onKeyDown={(e) => e.key === "Enter" && submit()}
-									placeholder="Type your answer…"
+									placeholder={
+										expectsPerson
+											? "…or type a new name"
+											: "Type your answer…"
+									}
 									disabled={!allowed}
 									className="flex-1"
 								/>
-								<Button onClick={submit} disabled={!allowed}>
+								<Button
+									onClick={submit}
+									disabled={!allowed || (expectsPerson ? !picked && !input.trim() : !input.trim())}
+								>
 									Send
 								</Button>
 							</div>
