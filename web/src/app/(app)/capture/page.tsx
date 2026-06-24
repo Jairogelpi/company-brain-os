@@ -47,11 +47,11 @@ export default function CapturePage() {
 	const isSubstitute = session.currentQuestion.probe === "SUSTITUTO";
 
 	const submit = () => {
-		// When the question asks for a person, prefer the dropdown selection;
-		// for the substitute question, fold in the declared level so the engine
-		// still extracts both. Free text stays as the "new person" fallback.
+		// Person questions are dropdown-only (no free text); for the substitute
+		// question, fold in the declared level so the engine extracts both.
 		let text = input.trim();
-		if (expectsPerson && picked) {
+		if (expectsPerson) {
+			if (!picked) return;
 			text = isSubstitute ? `${picked} nivel ${level}` : picked;
 		}
 		if (!text) return;
@@ -129,7 +129,8 @@ export default function CapturePage() {
 								{session.currentQuestion.text}
 							</p>
 
-							{expectsPerson && (
+							{expectsPerson ? (
+								// Person questions: choose from the company — no free text.
 								<div className="mt-4 flex flex-wrap gap-2">
 									<select
 										value={picked}
@@ -159,29 +160,25 @@ export default function CapturePage() {
 											))}
 										</select>
 									)}
+									<Button onClick={submit} disabled={!allowed || !picked}>
+										Send
+									</Button>
+								</div>
+							) : (
+								<div className="mt-4 flex gap-2">
+									<Input
+										value={input}
+										onChange={(e) => setInput(e.target.value)}
+										onKeyDown={(e) => e.key === "Enter" && submit()}
+										placeholder="Type your answer…"
+										disabled={!allowed}
+										className="flex-1"
+									/>
+									<Button onClick={submit} disabled={!allowed || !input.trim()}>
+										Send
+									</Button>
 								</div>
 							)}
-
-							<div className="mt-2 flex gap-2">
-								<Input
-									value={input}
-									onChange={(e) => setInput(e.target.value)}
-									onKeyDown={(e) => e.key === "Enter" && submit()}
-									placeholder={
-										expectsPerson
-											? "…or type a new name"
-											: "Type your answer…"
-									}
-									disabled={!allowed}
-									className="flex-1"
-								/>
-								<Button
-									onClick={submit}
-									disabled={!allowed || (expectsPerson ? !picked && !input.trim() : !input.trim())}
-								>
-									Send
-								</Button>
-							</div>
 						</CardContent>
 					</Card>
 
