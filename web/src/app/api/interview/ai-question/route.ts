@@ -90,7 +90,7 @@ Genera UNA sola pregunta de seguimiento, en español, concreta y ESPECÍFICA de 
 	try {
 		const raw = await geminiGenerate(prompt, cfg, {
 			temperature: 0.8,
-			maxOutputTokens: 120,
+			maxOutputTokens: 256,
 		});
 		// Keep only the first line/question, strip surrounding quotes.
 		const question = raw

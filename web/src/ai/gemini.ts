@@ -24,6 +24,12 @@ export function getGeminiConfig(): GeminiConfig | null {
 type GenerateOptions = {
 	temperature?: number;
 	maxOutputTokens?: number;
+	/**
+	 * Gemini 2.5 models "think" before answering, and thinking tokens count
+	 * against maxOutputTokens — which can swallow the whole budget and truncate
+	 * the answer. Default 0 disables thinking for short, direct tasks.
+	 */
+	thinkingBudget?: number;
 };
 
 /**
@@ -44,7 +50,8 @@ export async function geminiGenerate(
 				contents: [{ parts: [{ text: prompt }] }],
 				generationConfig: {
 					temperature: options.temperature ?? 0.7,
-					maxOutputTokens: options.maxOutputTokens ?? 256,
+					maxOutputTokens: options.maxOutputTokens ?? 512,
+					thinkingConfig: { thinkingBudget: options.thinkingBudget ?? 0 },
 				},
 			}),
 		},
