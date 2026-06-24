@@ -104,21 +104,27 @@ export default function CapturePage() {
 		setFinishing(true);
 		setErr("");
 		const transcript = history.map((t) => `${t.q} ${t.a}`).join(". ");
-		const res = await fetch("/api/graph/build", {
+		const res = await fetch("/api/interview/extract", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ message: transcript }),
+			body: JSON.stringify({ text: transcript }),
 		});
 		setFinishing(false);
 		const d = (await res.json().catch(() => ({}))) as {
-			reply?: string;
+			queued?: number;
+			usedAi?: boolean;
 			error?: string;
 		};
 		if (!res.ok) {
-			setErr(d.error ?? "No se pudo guardar.");
+			setErr(d.error ?? "No se pudo extraer.");
 			return;
 		}
-		setSavedMsg(d.reply ?? "Guardado en el grafo.");
+		const n = d.queued ?? 0;
+		setSavedMsg(
+			n > 0
+				? `${n} propuesta(s) en revisión${d.usedAi ? " (extraídas por IA)" : ""}. Apruébalas en Inbox para escribirlas al grafo.`
+				: "No se extrajo nada nuevo.",
+		);
 	};
 
 	return (
@@ -130,7 +136,8 @@ export default function CapturePage() {
 				</h1>
 				<p className="mt-2 max-w-xl text-sm text-muted-foreground">
 					Responde en lenguaje natural. Cada {AI_EVERY} preguntas, la IA genera
-					una específica de tu empresa. Al terminar, lo volcamos al grafo.
+					una específica de tu empresa. Al terminar, la IA extrae personas,
+					conocimiento y relaciones y las deja en revisión.
 				</p>
 			</div>
 
@@ -253,7 +260,7 @@ export default function CapturePage() {
 									onClick={finish}
 									disabled={finishing || !allowed || history.length === 0}
 								>
-									{finishing ? "Guardando…" : "Volcar al grafo"}
+									{finishing ? "Extrayendo…" : "Extraer para revisar"}
 								</Button>
 							</div>
 							{err && (
@@ -275,8 +282,8 @@ export default function CapturePage() {
 									<Link href="/graph" className="hover:underline">
 										Ver grafo →
 									</Link>
-									<Link href="/people" className="hover:underline">
-										Ver personas →
+									<Link href="/inbox" className="hover:underline">
+										Revisar en Inbox →
 									</Link>
 								</div>
 							</CardContent>

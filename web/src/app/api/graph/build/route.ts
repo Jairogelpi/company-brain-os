@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { requireApiUser } from "@/auth/api-guard";
 import { getGraphService } from "@/server/graph";
 import { ingestText } from "@/domain/ingest";
+import { getGeminiConfig } from "@/ai/gemini";
+import { extractGraphProposals, type ExistingNode } from "@/ai/gemini-extract";
+import type { GraphOperationProposal } from "@/domain/interview";
+import type { NodeType } from "@/domain/graph";
 
 /**
  * POST /api/graph/build — the AI build assistant.
@@ -28,16 +32,36 @@ export async function POST(request: Request) {
 	}
 
 	const service = getGraphService(user.companyId, user.id);
-	const existingNodeIds = new Set((await service.listNodes()).map((n) => n.id));
+	const nodes = await service.listNodes();
 
-	let proposals;
-	let summary;
-	try {
-		const result = ingestText(message, { source: "ai-build", existingNodeIds });
-		proposals = result.proposals.map((p) => p.proposal);
-		summary = result.summary;
-	} catch (err) {
-		return NextResponse.json({ error: (err as Error).message }, { status: 400 });
+	// Prefer Gemini extraction (rich: nodes + relationships); fall back to the
+	// heuristic ingestText when Gemini is unset or fails.
+	let proposals: GraphOperationProposal[] = [];
+	let summary = "";
+	const cfg = getGeminiConfig();
+	if (cfg) {
+		try {
+			const existing: ExistingNode[] = nodes.map((n) => ({
+				id: n.id,
+				name: n.name,
+				type: n.type as NodeType,
+			}));
+			const out = await extractGraphProposals(message, existing, cfg);
+			proposals = out.proposals;
+			summary = out.summary;
+		} catch {
+			// fall through to heuristic
+		}
+	}
+	if (proposals.length === 0) {
+		try {
+			const existingNodeIds = new Set(nodes.map((n) => n.id));
+			const result = ingestText(message, { source: "ai-build", existingNodeIds });
+			proposals = result.proposals.map((p) => p.proposal);
+			summary = summary || result.summary;
+		} catch (err) {
+			return NextResponse.json({ error: (err as Error).message }, { status: 400 });
+		}
 	}
 
 	if (proposals.length === 0) {
