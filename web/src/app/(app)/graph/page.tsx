@@ -20,6 +20,7 @@ const TYPE_DOT: Record<NodeType, string> = {
 	Supplier: "bg-orange-400",
 	Project: "bg-violet-400",
 	System: "bg-sky-400",
+	Document: "bg-zinc-400",
 };
 
 export default function GraphPage() {

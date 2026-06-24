@@ -19,6 +19,7 @@ const TYPE_STYLE: Record<NodeType, { dot: string; glyph: string }> = {
 	Supplier: { dot: "#fb923c", glyph: "◇" },
 	Project: { dot: "#a78bfa", glyph: "▲" },
 	System: { dot: "#38bdf8", glyph: "⌘" },
+	Document: { dot: "#a1a1aa", glyph: "▤" },
 };
 
 type View = { tx: number; ty: number; k: number };
@@ -223,12 +224,25 @@ export default function InteractiveGraph({
 									strokeWidth={active ? 1.6 : 1}
 									markerEnd="url(#arrow)"
 								/>
+								{/* Label: always horizontal, sitting just above the line,
+								    on a paper pill so it stays readable over the edge. */}
+								<rect
+									x={mx - (edge.type.length * 5.6 + 8) / 2}
+									y={my - 16}
+									width={edge.type.length * 5.6 + 8}
+									height={13}
+									rx={3}
+									fill="var(--color-card)"
+									stroke="var(--color-border)"
+									strokeWidth={0.5}
+									opacity={0.95}
+								/>
 								<text
 									x={mx}
-									y={my - 4}
+									y={my - 7}
 									textAnchor="middle"
-									className="fill-[var(--color-ash-gray)]"
-									style={{ fontSize: 9, letterSpacing: "0.04em" }}
+									className="fill-[var(--color-foreground)]"
+									style={{ fontSize: 9, letterSpacing: "0.02em" }}
 								>
 									{edge.type}
 								</text>

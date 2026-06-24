@@ -9,6 +9,7 @@ export const NODE_TYPES = [
   "Supplier",
   "Project",
   "System",
+  "Document",
 ] as const;
 
 export type NodeType = (typeof NODE_TYPES)[number];
@@ -21,6 +22,11 @@ export const EDGE_TYPES = [
   "PRODUCES",
   "DEPENDS_ON",
   "BELONGS_TO",
+  "BACKS_UP",
+  "OWNS",
+  "MANAGES",
+  "ADMINISTERS",
+  "DOCUMENTS",
 ] as const;
 
 export type EdgeType = (typeof EDGE_TYPES)[number];
@@ -107,6 +113,22 @@ const edgeEndpointRules = {
     { from: "Asset", to: "Unit" },
     { from: "Project", to: "Unit" },
     { from: "System", to: "Unit" },
+  ],
+  // People-centric relationships that surface succession + contact risk.
+  BACKS_UP: [{ from: "Person", to: "Person" }],
+  OWNS: [
+    { from: "Person", to: "Client" },
+    { from: "Person", to: "Supplier" },
+  ],
+  MANAGES: [
+    { from: "Person", to: "Project" },
+    { from: "Person", to: "Unit" },
+  ],
+  ADMINISTERS: [{ from: "Person", to: "System" }],
+  // Documents close the loop: an artifact that documents knowledge / a process.
+  DOCUMENTS: [
+    { from: "Document", to: "Knowledge" },
+    { from: "Document", to: "Process" },
   ],
 } as const satisfies Record<EdgeType, readonly { from: NodeType | "*"; to: NodeType | "*" }[]>;
 

@@ -13,7 +13,8 @@ export interface DetectedRisk {
 		| "single_point_of_failure"
 		| "low_resilience"
 		| "undocumented_critical"
-		| "bus_factor_zero";
+		| "bus_factor_zero"
+		| "single_point_of_contact";
 	severity: "critical" | "high" | "medium";
 	sourceNodeId: string;
 	sourceNodeName: string;
@@ -165,6 +166,54 @@ export function detectLowResilience(
 }
 
 /**
+ * Single point of contact: a Client or Supplier whose relationship is owned by
+ * exactly one person (OWNS/MANAGES). If that person leaves, the relationship is
+ * orphaned — the external-facing equivalent of bus factor 1.
+ */
+export function detectSinglePointOfContact(
+	nodes: GraphNode[],
+	edges: GraphEdge[],
+): DetectedRisk[] {
+	const personIds = new Set(
+		nodes.filter((n) => n.type === "Person").map((n) => n.id),
+	);
+	const external = nodes.filter(
+		(n) => n.type === "Client" || n.type === "Supplier",
+	);
+
+	const risks: DetectedRisk[] = [];
+	for (const ext of external) {
+		const owners = [
+			...new Set(
+				edges
+					.filter(
+						(e) =>
+							(e.type === "OWNS" || e.type === "MANAGES") &&
+							e.toNodeId === ext.id &&
+							personIds.has(e.fromNodeId),
+					)
+					.map((e) => e.fromNodeId),
+			),
+		];
+		if (owners.length !== 1) continue;
+		const ownerName = nodes.find((n) => n.id === owners[0])?.name ?? "unknown";
+		const label = ext.type === "Client" ? "Client" : "Supplier";
+		risks.push({
+			id: `risk-spoc-${ext.id}`,
+			riskType: "single_point_of_contact",
+			severity: ext.criticality === "high" ? "critical" : "high",
+			sourceNodeId: ext.id,
+			sourceNodeName: ext.name,
+			relatedNodeIds: owners,
+			message: `${label} "${ext.name}" relies on a single contact: ${ownerName}. No backup for this relationship.`,
+			confidence: 0,
+			trigger: `single owner of ${label.toLowerCase()}`,
+		});
+	}
+	return risks;
+}
+
+/**
  * Run all risk detectors and produce a unified report.
  */
 export function detectAllRisks(
@@ -175,8 +224,9 @@ export function detectAllRisks(
 	const bf0 = detectBusFactorZero(nodes, edges);
 	const undoc = detectUndocumentedCritical(nodes, edges);
 	const lowRes = detectLowResilience(nodes, edges);
+	const spoc = detectSinglePointOfContact(nodes, edges);
 
-	const allRisks = [...spof, ...bf0, ...undoc, ...lowRes];
+	const allRisks = [...spof, ...bf0, ...undoc, ...lowRes, ...spoc];
 
 	const critical = allRisks.filter((r) => r.severity === "critical").length;
 	const high = allRisks.filter((r) => r.severity === "high").length;

@@ -33,6 +33,7 @@ const CATEGORY_TYPE: Record<string, NodeType> = {
 	suppliers: "Supplier",
 	projects: "Project",
 	systems: "System",
+	documents: "Document",
 };
 
 function slug(s: string): string {
@@ -73,6 +74,7 @@ Esquema de salida (todas las claves opcionales, omite las vacías):
   "suppliers": ["..."],
   "systems": ["..."],
   "projects": ["..."],
+  "documents": ["Nombre de un manual/SOP/PDF/doc"],
   "relationships": [{"from": "Nombre exacto", "type": "TIPO", "to": "Nombre exacto"}]
 }
 
@@ -83,7 +85,14 @@ Tipos de relación válidos y sus extremos (USA SOLO ESTOS):
 - REQUIRES: Process → Knowledge | Process → System | Project → Knowledge | Project → System
 - PRODUCES: Process → Asset | Project → Asset
 - BELONGS_TO: Person|Process|Project|System → Unit
-- DEPENDS_ON: cualquiera → cualquiera (úsalo para clientes/proveedores y dependencias)
+- BACKS_UP: Person → Person (es el backup/sustituto de)
+- OWNS: Person → Client | Person → Supplier (lleva la relación con ese cliente/proveedor)
+- MANAGES: Person → Project | Person → Unit (gestiona/lidera)
+- ADMINISTERS: Person → System (sabe administrar/configurar el sistema)
+- DOCUMENTS: Document → Knowledge | Document → Process (este documento documenta eso)
+- DEPENDS_ON: cualquiera → cualquiera (solo si ninguna de las anteriores encaja)
+
+IMPORTANTE: clasifica un sistema/herramienta (ERP, CRM, software, hoja de cálculo) como "systems", no como "knowledge". Para "X lleva la relación con el cliente Y" usa OWNS. Para "Z es el backup de W" usa BACKS_UP.
 
 Reglas:
 - "from" y "to" deben ser nombres que aparezcan en algún array de nodos (existentes o nuevos).
@@ -106,6 +115,7 @@ type RawJson = {
 	suppliers?: string[];
 	systems?: string[];
 	projects?: string[];
+	documents?: string[];
 	relationships?: Array<{ from?: string; type?: string; to?: string }>;
 };
 
@@ -183,6 +193,7 @@ export async function extractGraphProposals(
 		suppliers: data.suppliers,
 		systems: data.systems,
 		projects: data.projects,
+		documents: data.documents,
 	})) {
 		const type = CATEGORY_TYPE[cat];
 		for (const name of names ?? []) {
