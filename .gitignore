@@ -27,5 +27,5 @@ npm-debug.log*
 Thumbs.db
 *.swp
 
-# User scratch reference image
-/image.png
+# Root-level images: scratch references + ad-hoc verification screenshots
+/*.png
