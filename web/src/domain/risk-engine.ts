@@ -4,6 +4,7 @@ import {
 	computeConfidences,
 	computeResilience,
 } from "./metrics";
+import { explainRiskRule } from "./risk-rules";
 
 // --- Risk types ---
 
@@ -76,7 +77,7 @@ export function detectSinglePointOfFailure(
 				relatedNodeIds: bf.expertIds,
 				message: `"${knowledgeName}" depends entirely on ${expertName}. Bus factor = 1. Confidence = ${conf?.confidence ?? "?"}%.`,
 				confidence: conf?.confidence ?? 0,
-				trigger: `bus_factor=1 AND criticality=high AND confidence<50`,
+			trigger: explainRiskRule("single_point_of_failure")!.condition,
 			};
 		});
 }
@@ -102,7 +103,7 @@ export function detectBusFactorZero(
 				relatedNodeIds: [],
 				message: `"${bf.knowledgeName}" has ZERO experts at level ≥ 3. Knowledge may be lost.`,
 				confidence: 0,
-				trigger: `bus_factor=0 AND criticality=high`,
+				trigger: explainRiskRule("bus_factor_zero")!.condition,
 			};
 		});
 }
@@ -130,7 +131,7 @@ export function detectUndocumentedCritical(
 				relatedNodeIds: [],
 				message: `"${k.name}" is critical but NOT documented. If the expert leaves, there is no written reference.`,
 				confidence: k.confidence ?? 25,
-				trigger: `documented=false AND criticality=high`,
+				trigger: explainRiskRule("undocumented_critical")!.condition,
 			};
 		});
 }
@@ -160,7 +161,7 @@ export function detectLowResilience(
 					computeConfidences(nodes, edges).find(
 						(c) => c.knowledgeId === r.weakestKnowledgeId,
 					)?.confidence ?? 0,
-				trigger: `process_resilience<=1`,
+				trigger: explainRiskRule("low_resilience")!.condition,
 			};
 		});
 }
@@ -205,7 +206,7 @@ export function detectSinglePointOfContact(
 			relatedNodeIds: owners,
 			message: `${label} "${ext.name}" relies on a single contact: ${ownerName}. No backup for this relationship.`,
 			confidence: 0,
-			trigger: `single owner of ${label.toLowerCase()}`,
+			trigger: explainRiskRule("single_point_of_contact")!.condition,
 		});
 	}
 	return risks;
