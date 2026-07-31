@@ -23,6 +23,8 @@ export const validationStateEnum = pgEnum("validation_state", [
 	"validated",
 	"retired",
 ]);
+export const assertionStatusEnum = pgEnum("assertion_status", ["draft", "proposed", "approved", "disputed", "rejected", "superseded", "expired", "archived"]);
+export const confidenceClassEnum = pgEnum("confidence_class", ["unverified", "weak", "supported", "verified", "contested"]);
 
 // Ponytail: text IDs match domain contract. No UUID mapping layer needed.
 export const nodes = pgTable(
@@ -347,3 +349,47 @@ export const validationScopes = pgTable(
 		index("validation_scopes_company_idx").on(table.companyId),
 	],
 );
+
+export const evidenceSources = pgTable("evidence_sources", {
+	id: text("id").primaryKey(),
+	organizationId: text("organization_id").notNull().references(() => companies.id),
+	type: text("type").notNull(),
+	createdBy: text("created_by").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [index("evidence_sources_org_idx").on(table.organizationId)]);
+
+export const evidenceItems = pgTable("evidence_items", {
+	id: text("id").primaryKey(),
+	organizationId: text("organization_id").notNull().references(() => companies.id),
+	sourceId: text("source_id").notNull().references(() => evidenceSources.id),
+	contentHash: text("content_hash"),
+	metadata: jsonb("metadata").$type<Record<string, unknown>>().notNull().default({}),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [index("evidence_items_org_idx").on(table.organizationId), index("evidence_items_source_idx").on(table.sourceId)]);
+
+export const assertions = pgTable("assertions", {
+	id: text("id").primaryKey(),
+	organizationId: text("organization_id").notNull().references(() => companies.id),
+	subjectEntityId: text("subject_entity_id").notNull(),
+	predicate: text("predicate").notNull(),
+	objectEntityId: text("object_entity_id"),
+	scalarValue: jsonb("scalar_value"),
+	status: assertionStatusEnum("status").notNull(),
+	proposedBy: text("proposed_by").notNull(),
+	approvedBy: text("approved_by"),
+	validFrom: timestamp("valid_from", { withTimezone: true }),
+	validUntil: timestamp("valid_until", { withTimezone: true }),
+	recordedAt: timestamp("recorded_at", { withTimezone: true }).notNull().defaultNow(),
+	supersededBy: text("superseded_by"),
+	confidenceClass: confidenceClassEnum("confidence_class").notNull(),
+	reviewDueAt: timestamp("review_due_at", { withTimezone: true }),
+	metadata: jsonb("metadata").$type<Record<string, unknown>>().notNull().default({}),
+}, (table) => [index("assertions_org_idx").on(table.organizationId), index("assertions_subject_idx").on(table.subjectEntityId), index("assertions_status_idx").on(table.status)]);
+
+export const assertionEvidence = pgTable("assertion_evidence", {
+	id: text("id").primaryKey(),
+	organizationId: text("organization_id").notNull().references(() => companies.id),
+	assertionId: text("assertion_id").notNull().references(() => assertions.id),
+	evidenceItemId: text("evidence_item_id").notNull().references(() => evidenceItems.id),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [unique("assertion_evidence_unique").on(table.assertionId, table.evidenceItemId), index("assertion_evidence_org_idx").on(table.organizationId)]);

@@ -92,6 +92,13 @@
       "when": 1782671971603,
       "tag": "0013_user_hr_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1785612600000,
+      "tag": "0014_assertion_ledger",
+      "breakpoints": true
     }
   ]
 }
