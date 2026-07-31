@@ -33,6 +33,10 @@ function risk(
 		message: "",
 		confidence: 20,
 		trigger: "",
+		ruleId: "test",
+		ruleVersion: 1,
+		inputFacts: {},
+		evidenceRefs: [],
 	};
 }
 

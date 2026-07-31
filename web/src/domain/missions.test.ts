@@ -20,6 +20,10 @@ const sampleRisk: DetectedRisk = {
 	message: "Bus factor 1",
 	confidence: 22,
 	trigger: "test",
+	ruleId: "test",
+	ruleVersion: 1,
+	inputFacts: {},
+	evidenceRefs: [],
 };
 
 const mediumRisk: DetectedRisk = {
@@ -32,6 +36,10 @@ const mediumRisk: DetectedRisk = {
 	message: "Undocumented",
 	confidence: 40,
 	trigger: "test",
+	ruleId: "test",
+	ruleVersion: 1,
+	inputFacts: {},
+	evidenceRefs: [],
 };
 
 describe("Mission System", () => {

@@ -23,6 +23,10 @@ export interface DetectedRisk {
 	message: string;
 	confidence: number; // knowledge confidence (0–100), lower = riskier
 	trigger: string; // what triggered this risk
+	ruleId: string;
+	ruleVersion: number;
+	inputFacts: Record<string, string | number | boolean | null>;
+	evidenceRefs: string[];
 }
 
 export interface RiskReport {
@@ -37,6 +41,22 @@ export interface RiskReport {
 }
 
 // --- Risk detectors ---
+
+function explanation(
+	type: DetectedRisk["riskType"],
+	inputFacts: DetectedRisk["inputFacts"],
+	evidenceRefs: string[],
+) {
+	const rule = explainRiskRule(type);
+	if (!rule) throw new Error(`Missing risk rule: ${type}`);
+	return {
+		trigger: rule.condition,
+		ruleId: rule.id,
+		ruleVersion: rule.version,
+		inputFacts,
+		evidenceRefs,
+	};
+}
 
 /**
  * Single point of failure: bus factor 1, critical, and undocumented.
@@ -77,7 +97,11 @@ export function detectSinglePointOfFailure(
 				relatedNodeIds: bf.expertIds,
 				message: `"${knowledgeName}" depends entirely on ${expertName}. Bus factor = 1. Confidence = ${conf?.confidence ?? "?"}%.`,
 				confidence: conf?.confidence ?? 0,
-			trigger: explainRiskRule("single_point_of_failure")!.condition,
+				...explanation(
+					"single_point_of_failure",
+					{ busFactor: bf.busFactor, criticality: bf.criticality, documented: bf.documented },
+					edges.filter((edge) => edge.type === "MASTERS" && edge.toNodeId === bf.knowledgeId).map((edge) => `edge:${edge.id}`),
+				),
 			};
 		});
 }
@@ -103,7 +127,7 @@ export function detectBusFactorZero(
 				relatedNodeIds: [],
 				message: `"${bf.knowledgeName}" has ZERO experts at level ≥ 3. Knowledge may be lost.`,
 				confidence: 0,
-				trigger: explainRiskRule("bus_factor_zero")!.condition,
+				...explanation("bus_factor_zero", { busFactor: bf.busFactor, criticality: bf.criticality }, [`node:${bf.knowledgeId}`]),
 			};
 		});
 }
@@ -131,7 +155,7 @@ export function detectUndocumentedCritical(
 				relatedNodeIds: [],
 				message: `"${k.name}" is critical but NOT documented. If the expert leaves, there is no written reference.`,
 				confidence: k.confidence ?? 25,
-				trigger: explainRiskRule("undocumented_critical")!.condition,
+				...explanation("undocumented_critical", { documented: k.documented, criticality: k.criticality ?? null }, [`node:${k.id}`]),
 			};
 		});
 }
@@ -161,7 +185,11 @@ export function detectLowResilience(
 					computeConfidences(nodes, edges).find(
 						(c) => c.knowledgeId === r.weakestKnowledgeId,
 					)?.confidence ?? 0,
-				trigger: explainRiskRule("low_resilience")!.condition,
+				...explanation(
+					"low_resilience",
+					{ processResilience: r.resilienceScore, weakestKnowledgeId: r.weakestKnowledgeId ?? null },
+					edges.filter((edge) => edge.type === "REQUIRES" && edge.fromNodeId === r.processId && edge.toNodeId === r.weakestKnowledgeId).map((edge) => `edge:${edge.id}`),
+				),
 			};
 		});
 }
@@ -206,7 +234,11 @@ export function detectSinglePointOfContact(
 			relatedNodeIds: owners,
 			message: `${label} "${ext.name}" relies on a single contact: ${ownerName}. No backup for this relationship.`,
 			confidence: 0,
-			trigger: explainRiskRule("single_point_of_contact")!.condition,
+			...explanation(
+				"single_point_of_contact",
+				{ ownerCount: owners.length, criticality: ext.criticality ?? null },
+				edges.filter((edge) => (edge.type === "OWNS" || edge.type === "MANAGES") && edge.toNodeId === ext.id && personIds.has(edge.fromNodeId)).map((edge) => `edge:${edge.id}`),
+			),
 		});
 	}
 	return risks;

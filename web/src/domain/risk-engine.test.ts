@@ -72,6 +72,14 @@ describe("Risk Engine", () => {
 			expect(risks).toHaveLength(1);
 			expect(risks[0].riskType).toBe("single_point_of_failure");
 			expect(risks[0].trigger).toBe("bus_factor=1 AND criticality=high AND documented=false");
+			expect(risks[0].ruleId).toBe("knowledge-single-point-of-failure");
+			expect(risks[0].ruleVersion).toBe(1);
+			expect(risks[0].inputFacts).toMatchObject({
+			busFactor: 1,
+			criticality: "high",
+			documented: false,
+		});
+			expect(risks[0].evidenceRefs).toContain("edge:e-m-p-f");
 			expect(risks[0].sourceNodeId).toBe(fillerKnowledge.id);
 			expect(risks[0].message).toContain("Pedro");
 		});

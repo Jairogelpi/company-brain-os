@@ -20,6 +20,10 @@ const sampleRisk: DetectedRisk = {
 	message: "SPOF",
 	confidence: 22,
 	trigger: "test",
+	ruleId: "test",
+	ruleVersion: 1,
+	inputFacts: {},
+	evidenceRefs: [],
 };
 
 const pedro: GraphNode = { id: "pedro", type: "Person", name: "Pedro" };
