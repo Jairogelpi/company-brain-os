@@ -39,13 +39,13 @@ const assetNode: GraphNode = {
 
 const unitNode: GraphNode = {
 	id: "node-unit",
-	type: "Unit",
+	type: "OrganizationalUnit",
 	name: "Planta 1",
 };
 
 const riskNode: GraphNode = {
 	id: "node-risk",
-	type: "Risk",
+	type: "ExternalParty",
 	name: "Parada de línea",
 };
 
@@ -81,12 +81,12 @@ describe("graph-to-canvas shape mapping", () => {
 		expect(getNodeColor("Asset")).toBe("violet");
 	});
 
-	it("maps a Unit node to grey", () => {
-		expect(getNodeColor("Unit")).toBe("grey");
+	it("maps an organizational unit node to grey", () => {
+		expect(getNodeColor("OrganizationalUnit")).toBe("grey");
 	});
 
-	it("maps a Risk node to red", () => {
-		expect(getNodeColor("Risk")).toBe("red");
+	it("maps an external party node to light blue", () => {
+		expect(getNodeColor("ExternalParty")).toBe("light-blue");
 	});
 
 	it("falls back to black for unknown node types", () => {
@@ -151,7 +151,7 @@ describe("graph-to-canvas shape mapping", () => {
 			"green",
 			"violet",
 			"grey",
-			"red",
+		"light-blue",
 		]);
 	});
 });

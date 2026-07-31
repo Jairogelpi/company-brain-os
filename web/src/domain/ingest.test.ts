@@ -27,7 +27,7 @@ describe("ingest — employee list auto-map", () => {
 		const r = mapEmployeeRows(ROWS, { source: "employees.xlsx" });
 
 		const people = nodesOf(r, "Person");
-		const units = nodesOf(r, "Unit");
+		const units = nodesOf(r, "OrganizationalUnit");
 		const edges = r.proposals
 			.map((p) => p.proposal)
 			.filter((p) => p.type === "create_edge");
@@ -59,7 +59,7 @@ describe("ingest — employee list auto-map", () => {
 		const r = mapEmployeeRows(ROWS, { source: "x", existingNodeIds: existing });
 
 		const people = nodesOf(r, "Person");
-		const units = nodesOf(r, "Unit");
+		const units = nodesOf(r, "OrganizationalUnit");
 		// Pedro + the existing unit are skipped; only Laura is new
 		expect(people.map((n) => n.name)).toEqual(["Laura"]);
 		expect(units).toHaveLength(0);
@@ -143,7 +143,7 @@ describe("ingest — employee list auto-map", () => {
 			source: "x",
 		});
 		const pedro = nodesOf(r, "Person")[0];
-		const unit = nodesOf(r, "Unit")[0];
+		const unit = nodesOf(r, "OrganizationalUnit")[0];
 		expect(pedro.id).toBe("person-pedro");
 		expect(unit.id).toBe("unit-produccion");
 	});

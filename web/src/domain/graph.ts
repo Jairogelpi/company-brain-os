@@ -1,12 +1,10 @@
 export const NODE_TYPES = [
   "Person",
   "Knowledge",
-  "Process",
-  "Asset",
-  "Unit",
-  "Risk",
-  "Client",
-  "Supplier",
+	"Process",
+	"Asset",
+	"OrganizationalUnit",
+	"ExternalParty",
   "Project",
   "System",
   "Document",
@@ -108,21 +106,20 @@ const edgeEndpointRules = {
   // cross-type dependency, e.g. Process DEPENDS_ON Supplier, Client DEPENDS_ON Process.
   DEPENDS_ON: [{ from: "*", to: "*" }],
   BELONGS_TO: [
-    { from: "Person", to: "Unit" },
-    { from: "Process", to: "Unit" },
-    { from: "Asset", to: "Unit" },
-    { from: "Project", to: "Unit" },
-    { from: "System", to: "Unit" },
+	{ from: "Person", to: "OrganizationalUnit" },
+	{ from: "Process", to: "OrganizationalUnit" },
+	{ from: "Asset", to: "OrganizationalUnit" },
+	{ from: "Project", to: "OrganizationalUnit" },
+	{ from: "System", to: "OrganizationalUnit" },
   ],
   // People-centric relationships that surface succession + contact risk.
   BACKS_UP: [{ from: "Person", to: "Person" }],
   OWNS: [
-    { from: "Person", to: "Client" },
-    { from: "Person", to: "Supplier" },
+		{ from: "Person", to: "ExternalParty" },
   ],
   MANAGES: [
     { from: "Person", to: "Project" },
-    { from: "Person", to: "Unit" },
+		{ from: "Person", to: "OrganizationalUnit" },
   ],
   ADMINISTERS: [{ from: "Person", to: "System" }],
   // Documents close the loop: an artifact that documents knowledge / a process.

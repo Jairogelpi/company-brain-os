@@ -22,25 +22,26 @@ const nodes: (GraphNode | KnowledgeNode)[] = [
 	},
 	{ id: "process-1", type: "Process", name: "Production" },
 	{ id: "asset-1", type: "Asset", name: "Filler machine" },
-	{ id: "unit-1", type: "Unit", name: "Operations" },
-	{ id: "risk-1", type: "Risk", name: "Single expert" },
+	{ id: "unit-1", type: "OrganizationalUnit", name: "Operations" },
+	{ id: "party-1", type: "ExternalParty", name: "ACME", attributes: { subtype: "client" } },
 ];
 
 describe("universal graph F0 invariants", () => {
-	it("keeps the universal catalog closed at 11 node types and 12 edge types", () => {
+	it("keeps the v4 continuity catalog closed and removes derived risks", () => {
 		expect(NODE_TYPES).toEqual([
 			"Person",
 			"Knowledge",
 			"Process",
 			"Asset",
-			"Unit",
-			"Risk",
-			"Client",
-			"Supplier",
+			"OrganizationalUnit",
+			"ExternalParty",
 			"Project",
 			"System",
 			"Document",
 		]);
+		expect(NODE_TYPES).not.toContain("Risk");
+		expect(NODE_TYPES).not.toContain("Client");
+		expect(NODE_TYPES).not.toContain("Supplier");
 		expect(EDGE_TYPES).toEqual([
 			"MASTERS",
 			"LEARNS",
@@ -98,7 +99,7 @@ describe("universal graph F0 invariants", () => {
 			{
 				id: "e7",
 				type: "DEPENDS_ON",
-				fromNodeId: "risk-1",
+				fromNodeId: "party-1",
 				toNodeId: "asset-1",
 			},
 			{

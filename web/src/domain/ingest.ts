@@ -133,7 +133,7 @@ export function mapEmployeeRows(
 			known.add(unitId);
 			add({
 				type: "create_node",
-				node: { id: unitId, type: "Unit", name: team },
+				node: { id: unitId, type: "OrganizationalUnit", name: team },
 				reason: `Team from ${opts.source}`,
 			});
 		}

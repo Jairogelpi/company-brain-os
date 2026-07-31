@@ -13,10 +13,8 @@ const TYPE_STYLE: Record<NodeType, { dot: string; glyph: string }> = {
 	Knowledge: { dot: "var(--color-highlighter-yellow)", glyph: "◆" },
 	Process: { dot: "#34d399", glyph: "▭" },
 	Asset: { dot: "#94a3b8", glyph: "▣" },
-	Unit: { dot: "#60a5fa", glyph: "⬡" },
-	Risk: { dot: "var(--color-destructive)", glyph: "⚠" },
-	Client: { dot: "#2dd4bf", glyph: "◎" },
-	Supplier: { dot: "#fb923c", glyph: "◇" },
+	OrganizationalUnit: { dot: "#60a5fa", glyph: "⬡" },
+	ExternalParty: { dot: "#2dd4bf", glyph: "◎" },
 	Project: { dot: "#a78bfa", glyph: "▲" },
 	System: { dot: "#38bdf8", glyph: "⌘" },
 	Document: { dot: "#a1a1aa", glyph: "▤" },
@@ -255,7 +253,7 @@ export default function InteractiveGraph({
 						if (!p) return null;
 						const style = TYPE_STYLE[node.type];
 						const selected = node.id === selectedId;
-						const critical = node.criticality === "high" || node.type === "Risk";
+						const critical = node.criticality === "high";
 						return (
 							<g
 								key={node.id}

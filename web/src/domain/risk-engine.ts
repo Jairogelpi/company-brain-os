@@ -177,9 +177,7 @@ export function detectSinglePointOfContact(
 	const personIds = new Set(
 		nodes.filter((n) => n.type === "Person").map((n) => n.id),
 	);
-	const external = nodes.filter(
-		(n) => n.type === "Client" || n.type === "Supplier",
-	);
+	const external = nodes.filter((n) => n.type === "ExternalParty");
 
 	const risks: DetectedRisk[] = [];
 	for (const ext of external) {
@@ -197,7 +195,7 @@ export function detectSinglePointOfContact(
 		];
 		if (owners.length !== 1) continue;
 		const ownerName = nodes.find((n) => n.id === owners[0])?.name ?? "unknown";
-		const label = ext.type === "Client" ? "Client" : "Supplier";
+		const label = ext.attributes?.subtype === "supplier" ? "Supplier" : "Client";
 		risks.push({
 			id: `risk-spoc-${ext.id}`,
 			riskType: "single_point_of_contact",
