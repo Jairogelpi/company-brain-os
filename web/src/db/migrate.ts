@@ -11,6 +11,7 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { Pool } from "pg";
+import { canonicalizeLegacyGraphNodes } from "./canonicalize-legacy-graph";
 
 const DATABASE_URL =
 	process.env.DATABASE_URL ??
@@ -30,6 +31,7 @@ export async function runMigrations() {
 
 	try {
 		await migrate(db, { migrationsFolder: "./drizzle" });
+		await canonicalizeLegacyGraphNodes(db);
 		console.log("Migrations complete.");
 	} catch (error) {
 		console.error("Migration failed:", (error as Error).message);
