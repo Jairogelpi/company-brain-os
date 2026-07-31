@@ -63,6 +63,11 @@ jobs:
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/company_brain_os
 
+      - name: Test tenant isolation
+        run: npx vitest --config test.integration.config.ts run src/db/assertion-rls.integration.test.ts
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/company_brain_os
+
       - name: Build
         run: npm run build
         env:
