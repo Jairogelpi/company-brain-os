@@ -33,6 +33,32 @@ describe("assertion ledger contract", () => {
 		});
 	});
 
+	it.each([
+		["organizationId", "missing_organization"],
+		["subjectEntityId", "missing_subject"],
+		["predicate", "missing_predicate"],
+		["proposedBy", "missing_proposer"],
+		["recordedAt", "missing_recorded_at"],
+	] as const)("requires %s", (field, code) => {
+		const invalid = { ...proposedAssertion, [field]: "" };
+
+		expect(validateAssertion(invalid)).toContainEqual({ code });
+	});
+
+	it("accepts a scalar assertion without an object entity", () => {
+		const { objectEntityId: _objectEntityId, ...scalarAssertion } = proposedAssertion;
+
+		expect(validateAssertion({ ...scalarAssertion, scalarValue: 3 })).toEqual([]);
+	});
+
+	it("requires an entity or scalar object", () => {
+		const { objectEntityId: _objectEntityId, ...withoutObject } = proposedAssertion;
+
+		expect(validateAssertion(withoutObject)).toContainEqual({
+			code: "missing_object",
+		});
+	});
+
 	it("does not allow approved truth to return to draft", () => {
 		expect(assertionCanTransition("approved", "draft")).toBe(false);
 		expect(assertionCanTransition("approved", "superseded")).toBe(true);
