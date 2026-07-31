@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { computeAllMetrics } from "@/domain/metrics";
 import { detectAllRisks } from "@/domain/risk-engine";
 import {
@@ -8,25 +8,16 @@ import {
 	computeRiskExposure,
 	formatMoney,
 } from "@/domain/financial-exposure";
-import { useAuth } from "@/components/auth/AuthProvider";
 import { useGraph } from "@/components/useGraph";
+import { useLang } from "@/components/auth/LanguageContext";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Button } from "@/components/ui/button";
 
 export default function HomePage() {
-	const { can } = useAuth();
-	const { data, error, reload } = useGraph();
-	const [seeding, setSeeding] = useState(false);
-
-	const seed = async () => {
-		setSeeding(true);
-		await fetch("/api/graph", { method: "POST" });
-		await reload();
-		setSeeding(false);
-	};
+	const { data, error } = useGraph();
+	const { t } = useLang();
 
 	const nodes = data?.nodes ?? [];
 	const edges = data?.edges ?? [];
@@ -46,7 +37,7 @@ export default function HomePage() {
 	if (!data) {
 		return (
 			<div className="p-10 text-sm text-muted-foreground">
-				{error || "Loading…"}
+				{error || t.loading}
 			</div>
 		);
 	}
@@ -54,72 +45,67 @@ export default function HomePage() {
 	if (nodes.length === 0) {
 		return (
 			<div className="mx-auto max-w-2xl px-8 py-24 text-center rise">
-				<div className="eyebrow">Organizational intelligence</div>
-				<h1 className="mt-3 text-4xl font-normal tracking-tight">
-					Nothing captured yet
+				<div className="eyebrow">{t.orgIntel}</div>
+				<h1 className="mt-3 text-[44px] font-semibold tracking-[-0.045em]">
+					{t.nothingCaptured}
 				</h1>
 				<p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
-					Your knowledge graph is empty. Seed it with a sample organization to
-					see coverage, risks, and bus-factor analysis in action.
+					{t.emptyGraph}
 				</p>
-				{can("user.invite") ? (
-					<Button onClick={seed} disabled={seeding} className="mt-7">
-						{seeding ? "Seeding…" : "Seed demo data"}
-					</Button>
-				) : (
-					<p className="mt-6 eyebrow">Ask an owner to seed initial data</p>
-				)}
+				<p className="mt-6 text-sm text-muted-foreground">
+					{t.askOwner}
+				</p>
 			</div>
 		);
 	}
 
 	const stats = [
 		{
-			label: "Coverage",
+			label: t.coverage,
 			value: `${metrics.coverage.coveragePercent}%`,
-			sub: `${metrics.coverage.coveredCritical}/${metrics.coverage.totalCritical} critical covered`,
+			sub: `${metrics.coverage.coveredCritical}/${metrics.coverage.totalCritical} ${t.criticalCovered}`,
 			progress: metrics.coverage.coveragePercent,
 			risk: false,
 		},
 		{
-			label: "Health",
+			label: t.health,
 			value: `${metrics.health.overallScore}`,
-			sub: "out of 100",
+			sub: t.outOf100,
 			progress: metrics.health.overallScore,
 			risk: false,
 		},
 		{
-			label: "Company IQ",
+			label: t.companyIQ,
 			value: `${metrics.companyIQ.iq}%`,
-			sub: `${metrics.companyIQ.documentedAndValidated}/${metrics.companyIQ.totalKnowledge} validated`,
+			sub: `${metrics.companyIQ.documentedAndValidated}/${metrics.companyIQ.totalKnowledge} ${t.validated}`,
 			progress: metrics.companyIQ.iq,
 			risk: false,
 		},
 		{
-			label: "Exposure at risk",
+			label: t.exposureAtRisk,
 			value: formatMoney(totalExposure.total),
-			sub: `${risks.summary.total} open · ${risks.summary.critical} critical`,
+			sub: `${risks.summary.total} ${t.open} · ${risks.summary.critical} ${t.critical}`,
 			progress: Math.min(risks.summary.total * 10, 100),
 			risk: true,
 		},
 	];
 
 	const links = [
-		{ href: "/people", label: "People", desc: "See who knows what" },
-		{ href: "/knowledge", label: "Knowledge", desc: "Browse knowledge areas" },
-		{ href: "/graph", label: "Graph", desc: "Visualize the network" },
+		{ href: "/people", label: t.people, desc: t.seeWhoKnows },
+		{ href: "/knowledge", label: t.knowledge, desc: t.browseKnowledge },
+		{ href: "/graph", label: t.graph, desc: t.visualizeNetwork },
 	];
 
 	return (
 		<div className="px-8 py-10 rise">
 			<div className="flex items-end justify-between border-b border-border pb-6">
-				<h1 className="text-4xl font-normal tracking-tight">Company Brain</h1>
+				<h1 className="text-[44px] font-semibold tracking-[-0.045em]">Company Brain</h1>
 				<div className="text-right text-[13px] text-muted-foreground">
 					<span className="numerals text-foreground">{people.length}</span>{" "}
-					people
+					{t.people.toLowerCase()}
 					<span className="mx-2 text-muted-foreground">·</span>
 					<span className="numerals text-foreground">{knowledge.length}</span>{" "}
-					knowledge areas
+					{t.knowledgeAreas}
 				</div>
 			</div>
 
@@ -172,7 +158,7 @@ export default function HomePage() {
 
 				<Card className="border-l-2 border-l-destructive p-6 lg:col-span-2">
 					<CardContent className="p-0">
-						<div className="eyebrow text-destructive">Most pressing risk</div>
+						<div className="eyebrow text-destructive">{t.mostPressingRisk}</div>
 						{risks.risks.length > 0 ? (
 							<>
 								<div className="numerals mt-3 text-3xl font-light text-destructive">
@@ -185,19 +171,19 @@ export default function HomePage() {
 								</p>
 								<div className="mt-3 flex flex-wrap gap-1.5">
 									<Badge variant="destructive">
-										{risks.risks[0].severity ?? "risk"}
+										{risks.risks[0].severity ?? t.risk}
 									</Badge>
 								</div>
 								<Link
 									href="/graph"
 									className="mt-4 inline-block text-xs font-medium text-foreground hover:underline"
 								>
-									Investigate →
+									{t.investigate}
 								</Link>
 							</>
 						) : (
 							<p className="mt-3 text-sm text-muted-foreground">
-								No open risks detected.
+								{t.noOpenRisks}
 							</p>
 						)}
 					</CardContent>

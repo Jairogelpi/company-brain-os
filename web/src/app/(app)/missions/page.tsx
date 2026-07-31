@@ -94,7 +94,7 @@ export default function MissionsPage() {
 		<div className="mx-auto max-w-4xl space-y-10 p-8">
 			<header>
 				<div className="eyebrow">Knowledge transfer</div>
-				<h1 className="text-3xl font-normal tracking-tight">Missions</h1>
+				<h1 className="text-[44px] font-semibold tracking-[-0.045em]">Missions</h1>
 				<p className="mt-1 text-sm text-muted-foreground">
 					Tasks to close knowledge gaps — documented, submitted and approved.
 				</p>

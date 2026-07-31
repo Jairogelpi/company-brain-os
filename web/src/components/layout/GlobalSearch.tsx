@@ -48,7 +48,7 @@ export default function GlobalSearch() {
 
 	return (
 		<div className="relative">
-			<div className="flex w-72 items-center gap-2 rounded-xl border border-border bg-background px-3 py-1.5">
+			<div className="flex w-72 items-center gap-2 rounded-xl border border-border px-3 py-1.5" style={{ background: "var(--search-bg, var(--color-background))" }}>
 				<Search className="h-4 w-4 text-muted-foreground" />
 				<input
 					value={query}

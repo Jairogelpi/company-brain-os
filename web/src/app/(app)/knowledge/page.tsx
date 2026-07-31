@@ -39,7 +39,7 @@ export default function KnowledgePage() {
 			<div className="flex items-end justify-between border-b border-border pb-6">
 				<div>
 					<div className="eyebrow">Institutional memory</div>
-					<h1 className="mt-2 text-4xl font-normal tracking-tight">
+					<h1 className="text-[44px] font-semibold tracking-[-0.045em]">
 						Knowledge
 					</h1>
 				</div>

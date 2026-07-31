@@ -67,7 +67,7 @@ function Simulator() {
 	return (
 		<div className="px-8 py-10 rise">
 			<div className="border-b border-border pb-6">
-				<h1 className="text-4xl font-normal tracking-tight">
+				<h1 className="text-[44px] font-semibold tracking-[-0.045em]">
 					Departure simulator
 				</h1>
 				<p className="mt-2 max-w-xl text-sm text-muted-foreground">

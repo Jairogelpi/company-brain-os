@@ -1,4 +1,5 @@
 import {
+	date,
 	index,
 	integer,
 	jsonb,
@@ -187,6 +188,14 @@ export const users = pgTable(
 			.$type<string[]>()
 			.notNull()
 			.default([]),
+		position: text("position"),
+		department: text("department"),
+		salary: integer("salary"),
+		workingHours: integer("working_hours"),
+		contractType: text("contract_type"),
+		startDate: date("start_date"),
+		phone: text("phone"),
+		bio: text("bio"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),

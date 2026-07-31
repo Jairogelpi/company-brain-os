@@ -5,21 +5,27 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-	"inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
+	"inline-flex items-center justify-center rounded-[10px] text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
 	{
 		variants: {
 			variant: {
-				default: "bg-primary text-primary-foreground hover:opacity-90",
+				default:
+					"bg-primary text-primary-foreground hover:opacity-90 active:scale-[.98]",
+				solid:
+					"text-[var(--solid-fg)] hover:opacity-88 active:scale-[.98]",
 				outline:
-					"border border-border bg-background hover:bg-secondary hover:text-foreground",
-				ghost: "hover:bg-secondary hover:text-foreground",
+					"border border-input bg-transparent text-foreground hover:bg-secondary",
+				ghost:
+					"text-foreground hover:bg-secondary",
 				destructive:
 					"bg-destructive text-destructive-foreground hover:opacity-90",
-				link: "text-foreground underline-offset-4 hover:underline",
+				link:
+					"text-foreground underline-offset-4 hover:underline",
 			},
 			size: {
 				default: "h-10 px-4 py-2",
 				sm: "h-9 px-3",
+				lg: "h-12 px-6 text-base",
 			},
 		},
 		defaultVariants: {
@@ -36,12 +42,17 @@ export interface ButtonProps
 }
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-	({ className, variant, size, asChild = false, ...props }, ref) => {
+	({ className, variant, size, asChild = false, style, ...props }, ref) => {
 		const Comp = asChild ? Slot : "button";
+		const solidStyle =
+			variant === "solid"
+				? { background: "var(--solid-bg)", ...style }
+				: style;
 		return (
 			<Comp
 				className={cn(buttonVariants({ variant, size, className }))}
 				ref={ref}
+				style={solidStyle}
 				{...props}
 			/>
 		);

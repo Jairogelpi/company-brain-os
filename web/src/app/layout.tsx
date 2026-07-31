@@ -1,13 +1,25 @@
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Geist, Geist_Mono, Archivo } from "next/font/google";
+import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/components/auth/AuthProvider";
+import { LanguageProvider } from "@/components/auth/LanguageContext";
 import "./globals.css";
 
-const inter = Inter({
-	variable: "--font-inter",
+const geist = Geist({
+	variable: "--font-geist",
 	subsets: ["latin"],
-	weight: ["400", "500"],
+});
+
+const geistMono = Geist_Mono({
+	variable: "--font-geist-mono",
+	subsets: ["latin"],
+});
+
+const archivo = Archivo({
+	variable: "--font-archivo",
+	subsets: ["latin"],
+	weight: ["400", "500", "600", "700", "800", "900"],
 });
 
 export const metadata: Metadata = {
@@ -19,11 +31,19 @@ export default function RootLayout({
 	children,
 }: Readonly<{ children: ReactNode }>) {
 	return (
-		<html lang="en">
-			<body className={inter.variable}>
-				<div id="app-root">
-					<AuthProvider>{children}</AuthProvider>
-				</div>
+		<html lang="en" suppressHydrationWarning>
+			<body
+				className={`${geist.variable} ${geistMono.variable} ${archivo.variable}`}
+			>
+				<ThemeProvider
+					attribute="class"
+					defaultTheme="light"
+					disableTransitionOnChange
+				>
+					<div id="app-root">
+						<LanguageProvider><AuthProvider>{children}</AuthProvider></LanguageProvider>
+					</div>
+				</ThemeProvider>
 			</body>
 		</html>
 	);

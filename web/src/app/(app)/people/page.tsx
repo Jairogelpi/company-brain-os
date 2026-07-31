@@ -46,7 +46,7 @@ export default function PeoplePage() {
 			<div className="flex items-end justify-between border-b border-border pb-6">
 				<div>
 					<div className="eyebrow">Who knows what</div>
-					<h1 className="mt-2 text-4xl font-normal tracking-tight">People</h1>
+					<h1 className="text-[44px] font-semibold tracking-[-0.045em]">People</h1>
 				</div>
 				<div className="text-right text-[13px] text-muted-foreground">
 					<span className="numerals text-foreground">{people.length}</span>{" "}

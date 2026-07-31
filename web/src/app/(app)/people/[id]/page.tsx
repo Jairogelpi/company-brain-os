@@ -110,7 +110,7 @@ export default function PersonDetailPage() {
 					</AvatarFallback>
 				</Avatar>
 				<div>
-					<h1 className="text-3xl font-normal tracking-tight">{person.name}</h1>
+					<h1 className="text-[32px] font-semibold tracking-[-0.04em]">{person.name}</h1>
 					<div className="mt-1.5 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
 						<span>{skills.length} skills mastered</span>
 						{learning.length > 0 && <span>· {learning.length} learning</span>}

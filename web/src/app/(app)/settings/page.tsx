@@ -20,7 +20,7 @@ export default function SettingsPage() {
 		<div className="px-8 py-10 rise">
 			<div className="border-b border-border pb-6">
 				<div className="eyebrow">Account</div>
-				<h1 className="mt-2 text-4xl font-normal tracking-tight">Settings</h1>
+				<h1 className="text-[44px] font-semibold tracking-[-0.045em]">Settings</h1>
 			</div>
 
 			<div className="mt-8 max-w-3xl space-y-6">

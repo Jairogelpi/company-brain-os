@@ -120,7 +120,7 @@ export default function InboxPage() {
 		<div className="px-8 py-10 rise">
 			<div className="border-b border-border pb-6">
 				<div className="eyebrow">Zero-effort capture</div>
-				<h1 className="mt-2 text-4xl font-normal tracking-tight">
+				<h1 className="text-[44px] font-semibold tracking-[-0.045em]">
 					Review inbox
 				</h1>
 				<p className="mt-2 max-w-xl text-sm text-muted-foreground">
