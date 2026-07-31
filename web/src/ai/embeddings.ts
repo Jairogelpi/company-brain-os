@@ -47,7 +47,9 @@ export async function embed(text: string): Promise<number[]> {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({ model: OLLAMA_MODEL, prompt: text }),
-			signal: AbortSignal.timeout(15000),
+			// Keep local development and CI responsive when Ollama is reachable
+			// but the embedding model is not loaded.
+			signal: AbortSignal.timeout(3000),
 		});
 
 		if (!response.ok) throw new Error(`Ollama error ${response.status}`);

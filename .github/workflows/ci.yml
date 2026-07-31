@@ -2,13 +2,21 @@ name: Company Brain OS CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, master]
   pull_request:
-    branches: [main]
+    branches: [main, master]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: web
@@ -39,9 +47,6 @@ jobs:
 
       - run: npm ci
 
-      - name: Typecheck
-        run: npm run typecheck
-
       - name: Run migrations
         run: npx drizzle-kit migrate
         env:
@@ -62,3 +67,6 @@ jobs:
         run: npm run build
         env:
           AUTH_SECRET: build-time-placeholder-secret-not-used-at-runtime
+
+      - name: Typecheck generated routes
+        run: npm run typecheck

@@ -1,4 +1,4 @@
-export type SignupField = "email" | "password" | "companyName";
+export type SignupField = "email" | "password" | "companyName" | "slug";
 
 export type SignupValidationError = {
 	field: SignupField;
@@ -40,9 +40,13 @@ export function validateSignup(body: unknown): SignupValidationError | null {
 	const password = typeof input.password === "string" ? input.password : "";
 	const companyName =
 		typeof input.companyName === "string" ? input.companyName.trim() : "";
+	const slug = typeof input.slug === "string" ? input.slug.trim() : "";
 
 	if (!EMAIL_RE.test(email)) return { field: "email" };
 	if (password.length < 8) return { field: "password" };
 	if (!companyName) return { field: "companyName" };
+	if (slug && !/^[a-z0-9](?:[a-z0-9-]{0,37}[a-z0-9])$/.test(slug)) {
+		return { field: "slug" };
+	}
 	return null;
 }

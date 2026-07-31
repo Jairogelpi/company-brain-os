@@ -18,19 +18,19 @@ describe("Sidebar (Programa + lucide)", () => {
 	});
 
 	it("keeps all navigate labels", () => {
-		for (const label of [
-			"Dashboard",
-			"Capture",
-			"Inbox",
-			"People",
-			"Knowledge",
-			"Graph",
-			"Genome",
-			"Simulator",
-			"Succession",
-			"Settings",
+		for (const key of [
+			'key: "dashboard"',
+			'key: "capture"',
+			'key: "inbox"',
+			'key: "people"',
+			'key: "knowledge"',
+			'key: "graph"',
+			'key: "genome"',
+			'key: "simulator"',
+			'key: "succession"',
+			'key: "settings"',
 		]) {
-			expect(source).toContain(label);
+			expect(source).toContain(key);
 		}
 	});
 
