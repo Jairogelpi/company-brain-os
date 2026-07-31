@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import { authConfig } from "./config";
 import { authorizeCredentials } from "./authorize";
 import type { AuthUser, UserRole } from "./permissions";
+import { requireOrganizationId } from "./organization-context";
 
 /**
  * Full Auth.js instance (Node runtime — uses the database and bcrypt).
@@ -37,7 +38,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 		id: u.id ?? "",
 		name: u.name ?? u.email,
 		email: u.email,
-		companyId: u.companyId ?? "demo-corp",
+		companyId: requireOrganizationId(u.companyId),
 		role: (u.role as UserRole) ?? "viewer",
 		validationDomains: u.validationDomains ?? [],
 	};
