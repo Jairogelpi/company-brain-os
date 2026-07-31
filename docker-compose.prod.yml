@@ -14,17 +14,17 @@ services:
       retries: 5
     restart: unless-stopped
 
-  # One-shot: run migrations + seed before the app starts.
+  # One-shot: run migrations before the app starts. Demo data is never seeded
+  # automatically in production.
   migrate:
     build:
       context: ./web
       dockerfile: Dockerfile
       target: builder
-    command: sh -c "npm run db:migrate && npm run db:seed"
+    command: npm run db:migrate
     environment:
       NODE_ENV: production
       DATABASE_URL: postgres://postgres:${DB_PASSWORD}@postgres:5432/company_brain_os
-      SEED_PASSWORD: ${SEED_PASSWORD:?SEED_PASSWORD is required}
     depends_on:
       postgres:
         condition: service_healthy

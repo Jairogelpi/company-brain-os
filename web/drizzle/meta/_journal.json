@@ -99,6 +99,13 @@
       "when": 1785612600000,
       "tag": "0014_assertion_ledger",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1785613500000,
+      "tag": "0015_v4_ontology_and_tenant_defaults",
+      "breakpoints": true
     }
   ]
 }

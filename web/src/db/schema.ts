@@ -31,7 +31,7 @@ export const nodes = pgTable(
 	"nodes",
 	{
 		id: text("id").primaryKey(),
-		companyId: text("company_id").notNull().default("default"),
+		companyId: text("company_id").notNull(),
 		type: nodeTypeEnum("type").notNull(),
 		name: text("name").notNull(),
 		criticality: criticalityEnum("criticality"),
@@ -61,7 +61,7 @@ export const edges = pgTable(
 	"edges",
 	{
 		id: text("id").primaryKey(),
-		companyId: text("company_id").notNull().default("default"),
+		companyId: text("company_id").notNull(),
 		type: edgeTypeEnum("type").notNull(),
 		fromNodeId: text("from_node_id")
 			.notNull()
@@ -95,7 +95,7 @@ export const nodeLayout = pgTable(
 		nodeId: text("node_id")
 			.primaryKey()
 			.references(() => nodes.id, { onDelete: "cascade" }),
-		companyId: text("company_id").notNull().default("default"),
+		companyId: text("company_id").notNull(),
 		x: integer("x").notNull().default(0),
 		y: integer("y").notNull().default(0),
 		color: text("color"),
@@ -111,7 +111,7 @@ export const eventLog = pgTable(
 	"event_log",
 	{
 		id: text("id").primaryKey(),
-		companyId: text("company_id").notNull().default("default"),
+		companyId: text("company_id").notNull(),
 		actorId: text("actor_id"),
 		eventType: text("event_type").notNull(),
 		payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
@@ -143,7 +143,7 @@ export const memberships = pgTable(
 	"memberships",
 	{
 		userId: text("user_id").notNull(),
-		companyId: text("company_id").notNull().default("default"),
+		companyId: text("company_id").notNull(),
 		role: text("role")
 			.$type<"owner" | "validator" | "contributor" | "viewer">()
 			.notNull()
@@ -181,7 +181,7 @@ export const users = pgTable(
 		email: text("email").notNull().unique(),
 		name: text("name").notNull(),
 		passwordHash: text("password_hash").notNull(),
-		companyId: text("company_id").notNull().default("demo-corp"),
+		companyId: text("company_id").notNull(),
 		role: text("role")
 			.$type<"owner" | "validator" | "contributor" | "viewer">()
 			.notNull()
@@ -213,7 +213,7 @@ export const missions = pgTable(
 	"missions",
 	{
 		id: text("id").primaryKey(),
-		companyId: text("company_id").notNull().default("default"),
+		companyId: text("company_id").notNull(),
 		personId: text("person_id"), // departing person the playbook is for
 		objective: text("objective").notNull(),
 		targetNodeId: text("target_node_id").notNull(),
@@ -256,7 +256,7 @@ export const missionSubmissions = pgTable(
 	"mission_submissions",
 	{
 		id: text("id").primaryKey(),
-		companyId: text("company_id").notNull().default("default"),
+		companyId: text("company_id").notNull(),
 		missionId: text("mission_id").notNull(),
 		authorId: text("author_id").notNull(),
 		kind: text("kind").$type<"file" | "text">().notNull(),
@@ -287,7 +287,7 @@ export const ingestionItems = pgTable(
 	"ingestion_items",
 	{
 		id: text("id").primaryKey(),
-		companyId: text("company_id").notNull().default("default"),
+		companyId: text("company_id").notNull(),
 		source: text("source").notNull(),
 		kind: text("kind").$type<"csv" | "text">().notNull(),
 		proposal: jsonb("proposal").$type<Record<string, unknown>>().notNull(),
@@ -310,7 +310,7 @@ export const transcriptionJobs = pgTable(
 	"transcription_jobs",
 	{
 		id: text("id").primaryKey(),
-		companyId: text("company_id").notNull().default("default"),
+		companyId: text("company_id").notNull(),
 		userId: text("user_id").notNull(),
 		source: text("source").notNull(),
 		storageKey: text("storage_key").notNull(),
@@ -341,7 +341,7 @@ export const validationScopes = pgTable(
 	"validation_scopes",
 	{
 		userId: text("user_id").notNull(),
-		companyId: text("company_id").notNull().default("default"),
+		companyId: text("company_id").notNull(),
 		domain: text("domain").notNull(),
 	},
 	(table) => [
