@@ -23,6 +23,8 @@ function toRow(assertion: Assertion) {
 		predicate: assertion.predicate,
 		objectEntityId: assertion.objectEntityId ?? null,
 		scalarValue: assertion.scalarValue ?? null,
+		sourceType: assertion.sourceType,
+		sourceId: assertion.sourceId,
 		status: assertion.status,
 		proposedBy: assertion.proposedBy,
 		approvedBy: assertion.approvedBy ?? null,
@@ -32,11 +34,7 @@ function toRow(assertion: Assertion) {
 		supersededBy: assertion.supersededBy ?? null,
 		confidenceClass: assertion.confidenceClass,
 		reviewDueAt: toDate(assertion.reviewDueAt),
-		metadata: {
-			...assertion.metadata,
-			sourceType: assertion.sourceType,
-			sourceId: assertion.sourceId,
-		},
+		metadata: assertion.metadata,
 	};
 }
 
@@ -48,8 +46,8 @@ function fromRow(row: typeof assertions.$inferSelect): Assertion {
 		predicate: row.predicate,
 		objectEntityId: row.objectEntityId ?? undefined,
 		scalarValue: row.scalarValue as Assertion["scalarValue"],
-		sourceType: String(row.metadata.sourceType ?? "ledger"),
-		sourceId: String(row.metadata.sourceId ?? row.id),
+		sourceType: row.sourceType,
+		sourceId: row.sourceId,
 		status: row.status,
 		proposedBy: row.proposedBy,
 		approvedBy: row.approvedBy ?? undefined,

@@ -106,6 +106,13 @@
       "when": 1785613500000,
       "tag": "0015_v4_ontology_and_tenant_defaults",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1785614400000,
+      "tag": "0016_assertion_provenance_columns",
+      "breakpoints": true
     }
   ]
 }

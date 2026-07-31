@@ -374,6 +374,8 @@ export const assertions = pgTable("assertions", {
 	predicate: text("predicate").notNull(),
 	objectEntityId: text("object_entity_id"),
 	scalarValue: jsonb("scalar_value"),
+	sourceType: text("source_type").notNull(),
+	sourceId: text("source_id").notNull(),
 	status: assertionStatusEnum("status").notNull(),
 	proposedBy: text("proposed_by").notNull(),
 	approvedBy: text("approved_by"),
@@ -384,7 +386,7 @@ export const assertions = pgTable("assertions", {
 	confidenceClass: confidenceClassEnum("confidence_class").notNull(),
 	reviewDueAt: timestamp("review_due_at", { withTimezone: true }),
 	metadata: jsonb("metadata").$type<Record<string, unknown>>().notNull().default({}),
-}, (table) => [index("assertions_org_idx").on(table.organizationId), index("assertions_subject_idx").on(table.subjectEntityId), index("assertions_status_idx").on(table.status)]);
+}, (table) => [index("assertions_org_idx").on(table.organizationId), index("assertions_subject_idx").on(table.subjectEntityId), index("assertions_status_idx").on(table.status), index("assertions_source_idx").on(table.sourceType, table.sourceId)]);
 
 export const assertionEvidence = pgTable("assertion_evidence", {
 	id: text("id").primaryKey(),
