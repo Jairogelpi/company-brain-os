@@ -2,7 +2,7 @@ import type { Assertion } from "@/domain/assertions";
 import { requireOrganizationId } from "@/auth/organization-context";
 import type { Db } from "./index";
 import { assertions } from "./schema";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
 export interface AssertionRepository {
 	create(assertion: Assertion): Promise<void>;
@@ -70,26 +70,38 @@ export function createDrizzleAssertionRepository(
 ): AssertionRepository {
 	const tenantId = requireOrganizationId(organizationId);
 	const scoped = (id: string) => and(eq(assertions.id, id), eq(assertions.organizationId, tenantId));
+	const setTenant = (tx: { execute: (query: ReturnType<typeof sql>) => Promise<unknown> }) =>
+		tx.execute(sql`select set_config('app.organization_id', ${tenantId}, true)`);
 
 	return {
 		async create(assertion) {
 			if (assertion.organizationId !== tenantId) throw new Error("Cannot cross organization boundaries");
-			await db.insert(assertions).values(toRow(assertion));
+			await db.transaction(async (tx) => {
+				await setTenant(tx);
+				await tx.insert(assertions).values(toRow(assertion));
+			});
 		},
 		async get(id) {
-			const rows = await db.select().from(assertions).where(scoped(id)).limit(1);
+			const rows = await db.transaction(async (tx) => {
+				await setTenant(tx);
+				return tx.select().from(assertions).where(scoped(id)).limit(1);
+			});
 			return rows[0] ? fromRow(rows[0]) : undefined;
 		},
 		async listByOrganization(requestedOrganizationId) {
 			if (requireOrganizationId(requestedOrganizationId) !== tenantId) return [];
-			const rows = await db.select().from(assertions).where(eq(assertions.organizationId, tenantId));
+			const rows = await db.transaction(async (tx) => {
+				await setTenant(tx);
+				return tx.select().from(assertions).where(eq(assertions.organizationId, tenantId));
+			});
 			return rows.map(fromRow);
 		},
 		async supersede(id, replacement) {
 			if (replacement.organizationId !== tenantId) throw new Error("Cannot cross organization boundaries");
-			const current = await this.get(id);
-			if (!current) throw new Error(`Missing assertion: ${id}`);
 			await db.transaction(async (tx) => {
+				await setTenant(tx);
+				const current = await tx.select().from(assertions).where(scoped(id)).limit(1);
+				if (!current[0]) throw new Error(`Missing assertion: ${id}`);
 				await tx.update(assertions).set({ status: "superseded", supersededBy: replacement.id }).where(scoped(id));
 				await tx.insert(assertions).values(toRow({ ...replacement, status: "proposed" }));
 			});
