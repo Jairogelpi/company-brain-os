@@ -2,6 +2,7 @@ import type { NodeType } from "@/domain/graph";
 import type { Db } from "./index";
 import { nodes, edges, eventLog } from "./schema";
 import { and, eq } from "drizzle-orm";
+import { requireOrganizationId } from "@/auth/organization-context";
 
 // --- Domain types (subset used by repository) ---
 
@@ -55,7 +56,7 @@ export interface GraphRepository {
 function nodeToRow(node: RepoNode) {
 	return {
 		id: node.id,
-		companyId: (node.companyId as string) ?? "default",
+		companyId: requireOrganizationId(node.companyId as string),
 		type: node.type as NodeType,
 		name: node.name,
 		criticality:
@@ -99,7 +100,7 @@ function rowToNode(row: typeof nodes.$inferSelect): RepoNode {
 function edgeToRow(edge: RepoEdge) {
 	return {
 		id: edge.id,
-		companyId: (edge.companyId as string) ?? "default",
+		companyId: requireOrganizationId(edge.companyId),
 		type: edge.type as never,
 		fromNodeId: edge.fromNodeId,
 		toNodeId: edge.toNodeId,
@@ -120,7 +121,7 @@ function rowToEdge(row: typeof edges.$inferSelect): RepoEdge {
 function eventToRow(event: RepoEvent) {
 	return {
 		id: event.id,
-		companyId: event.companyId ?? "default",
+		companyId: requireOrganizationId(event.companyId),
 		actorId: event.actorId ?? null,
 		eventType: event.eventType,
 		payload: event.payload,
@@ -146,14 +147,15 @@ function rowToEvent(row: typeof eventLog.$inferSelect): RepoEvent {
  */
 export function createDrizzleGraphRepository(
 	db: Db,
-	companyId?: string,
+	companyId: string,
 ): GraphRepository {
+	const tenantId = requireOrganizationId(companyId);
 	const scopeNode = (extra: ReturnType<typeof eq>) =>
-		companyId ? and(extra, eq(nodes.companyId, companyId)) : extra;
+		and(extra, eq(nodes.companyId, tenantId));
 	const scopeEdge = (extra: ReturnType<typeof eq>) =>
-		companyId ? and(extra, eq(edges.companyId, companyId)) : extra;
+		and(extra, eq(edges.companyId, tenantId));
 	const withCompany = <T extends object>(row: T): T =>
-		companyId ? ({ ...row, companyId } as T) : row;
+		({ ...row, companyId: tenantId } as T);
 
 	return {
 		async createNode(node) {
@@ -239,7 +241,7 @@ export function createDrizzleGraphRepository(
 				.select()
 				.from(eventLog)
 				.where(
-					companyId ? eq(eventLog.companyId, companyId) : undefined,
+					eq(eventLog.companyId, tenantId),
 				)
 				.orderBy(eventLog.createdAt);
 			return rows.map(rowToEvent);

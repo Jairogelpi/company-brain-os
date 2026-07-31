@@ -10,10 +10,22 @@ import {
 } from "./persistent-graph-service";
 
 describe("event ids", () => {
+	it("requires an explicit organization context", () => {
+		expect(() =>
+			createPersistentGraphService(createInMemoryGraphRepository(), {
+				companyId: "",
+			}),
+		).toThrow("Organization context is required");
+	});
+
 	it("are unique across separate service instances (shared event_log PK)", async () => {
 		const n = (id: string): GraphNode => ({ id, type: "Person", name: id });
-		const a = createPersistentGraphService(createInMemoryGraphRepository());
-		const b = createPersistentGraphService(createInMemoryGraphRepository());
+		const a = createPersistentGraphService(createInMemoryGraphRepository(), {
+			companyId: "test-corp-a",
+		});
+		const b = createPersistentGraphService(createInMemoryGraphRepository(), {
+			companyId: "test-corp-b",
+		});
 		const e1 = await a.createNode(n("p1"));
 		const e2 = await b.createNode(n("p2"));
 		// A per-instance counter would make both "evt-1" → DB PK collision.
