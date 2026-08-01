@@ -1,4 +1,4 @@
-import type { Assertion } from "@/domain/assertions";
+import { validateAssertion, type Assertion } from "@/domain/assertions";
 import { requireOrganizationId } from "@/auth/organization-context";
 import type { Db } from "./index";
 import { assertions } from "./schema";
@@ -9,6 +9,13 @@ export interface AssertionRepository {
 	get(id: string): Promise<Assertion | undefined>;
 	listByOrganization(organizationId: string): Promise<Assertion[]>;
 	supersede(id: string, replacement: Assertion): Promise<Assertion>;
+}
+
+function assertValid(assertion: Assertion): void {
+	const issues = validateAssertion(assertion);
+	if (issues.length > 0) {
+		throw new Error(`Invalid assertion: ${issues.map((issue) => issue.code).join(", ")}`);
+	}
 }
 
 function toDate(value?: string): Date | null {
@@ -73,6 +80,7 @@ export function createDrizzleAssertionRepository(
 
 	return {
 		async create(assertion) {
+			assertValid(assertion);
 			if (assertion.organizationId !== tenantId) throw new Error("Cannot cross organization boundaries");
 			await db.transaction(async (tx) => {
 				await setTenant(tx);
@@ -113,6 +121,7 @@ export function createInMemoryAssertionRepository(): AssertionRepository {
 
 	return {
 		async create(assertion) {
+			assertValid(assertion);
 			if (assertions.has(assertion.id)) throw new Error(`Assertion already exists: ${assertion.id}`);
 			assertions.set(assertion.id, structuredClone(assertion));
 		},

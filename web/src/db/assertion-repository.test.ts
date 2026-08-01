@@ -26,4 +26,12 @@ describe("assertion repository", () => {
 		expect(replacement.status).toBe("proposed");
 		expect((await repo.get("a-1"))?.status).toBe("superseded");
 	});
+
+	it("rejects assertions without canonical provenance", async () => {
+		const repo = createInMemoryAssertionRepository();
+
+		await expect(repo.create({ ...assertion, id: "missing-source", sourceId: "" })).rejects.toThrow(
+			"missing_provenance",
+		);
+	});
 });
