@@ -111,10 +111,9 @@ describe("Multi-company", () => {
 		expect(company.name).toBe("Acme Corporation");
 	});
 
-	it("demo company exists by default", () => {
-		expect(companyExists("demo-corp")).toBe(true);
-		const demo = getCompany("demo-corp");
-		expect(demo?.name).toBe("Demo Corporation");
+	it("does not create a demo company by default", () => {
+		expect(companyExists("demo-corp")).toBe(false);
+		expect(getCompany("demo-corp")).toBeUndefined();
 	});
 
 	it("lists all companies", () => {
