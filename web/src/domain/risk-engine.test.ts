@@ -5,6 +5,7 @@ import {
 	detectBusFactorZero,
 	detectUndocumentedCritical,
 	detectLowResilience,
+	detectSinglePointOfContact,
 	detectAllRisks,
 } from "./risk-engine";
 
@@ -159,6 +160,44 @@ describe("Risk Engine", () => {
 
 			expect(risks.length).toBeGreaterThanOrEqual(1);
 			expect(risks[0].riskType).toBe("low_resilience");
+		});
+	});
+
+	describe("detectSinglePointOfContact", () => {
+		it("detects a sole owner of a critical external party with its evidence", () => {
+			const customer: GraphNode = {
+				id: "client-acme",
+				type: "ExternalParty",
+				name: "ACME",
+				criticality: "high",
+				attributes: { subtype: "client" },
+			};
+			const ownership: GraphEdge = {
+				id: "edge-owner-acme",
+				type: "OWNS",
+				fromNodeId: pedro.id,
+				toNodeId: customer.id,
+			};
+
+			const risks = detectSinglePointOfContact([pedro, customer], [ownership]);
+
+			expect(risks).toHaveLength(1);
+			expect(risks[0]).toMatchObject({
+				riskType: "single_point_of_contact",
+				severity: "critical",
+				ruleId: "external-party-single-contact",
+				evidenceRefs: ["edge:edge-owner-acme"],
+			});
+		});
+
+		it("does not report parties with no owner or a verified second owner", () => {
+			const supplier: GraphNode = { id: "supplier", type: "ExternalParty", name: "Supply", attributes: { subtype: "supplier" } };
+			const backup: GraphEdge = { id: "edge-owner-laura", type: "MANAGES", fromNodeId: laura.id, toNodeId: supplier.id };
+
+			expect(detectSinglePointOfContact([pedro, laura, supplier], [])).toEqual([]);
+			expect(detectSinglePointOfContact([pedro, laura, supplier], [
+				{ ...backup, id: "edge-owner-pedro", type: "OWNS", fromNodeId: pedro.id }, backup,
+			])).toEqual([]);
 		});
 	});
 
