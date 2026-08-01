@@ -2,6 +2,7 @@ import { and, asc, eq } from "drizzle-orm";
 import { createDb, type Db } from "@/db";
 import { transcriptionJobs } from "@/db/schema";
 import type { TranscriptionProvider } from "@/ai/transcription";
+import { requireOrganizationId } from "@/auth/organization-context";
 
 export type TranscriptionJobStatus =
 	| "queued"
@@ -60,7 +61,7 @@ export function createInMemoryTranscriptionJobStore(
 			const timestamp = now();
 			const job: TranscriptionJob = {
 				id: input.id ?? newJobId(),
-				companyId: input.companyId ?? "default",
+				companyId: requireOrganizationId(input.companyId),
 				userId: input.userId,
 				source: input.source,
 				storageKey: input.storageKey,

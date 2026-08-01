@@ -21,14 +21,6 @@ export class CompanySlugConflictError extends Error {
 	}
 }
 
-// Seed the demo company
-companies.set("demo-corp", {
-	id: "demo-corp",
-	name: "Demo Corporation",
-	slug: "demo-corp",
-	createdAt: new Date().toISOString(),
-});
-
 export function createCompany(name: string): Company {
 	const slug = name
 		.toLowerCase()

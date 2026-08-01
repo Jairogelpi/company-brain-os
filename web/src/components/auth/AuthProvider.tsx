@@ -25,12 +25,12 @@ export function useAuth(): {
 	const { data: session } = useSession();
 	const s = session?.user;
 
-	const user: AuthUser | null = s?.email
+	const user: AuthUser | null = s?.email && s.companyId
 		? {
 				id: s.id ?? "",
 				name: s.name ?? s.email,
 				email: s.email,
-				companyId: s.companyId ?? "demo-corp",
+				companyId: s.companyId,
 				role: s.role ?? "viewer",
 				validationDomains: s.validationDomains ?? [],
 			}
