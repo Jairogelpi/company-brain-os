@@ -25,6 +25,9 @@ describe.skipIf(!databaseUrl)("assertion ledger RLS", () => {
 
 	afterAll(async () => {
 		if (!admin) return;
+		await admin.query("delete from assertions where id = $1", [`assertion-${suffix}`]);
+		await admin.query(`revoke all privileges on assertions from ${role}`);
+		await admin.query(`revoke usage on schema public from ${role}`);
 		await admin.query(`drop role if exists ${role}`);
 		await admin.query("delete from companies where id in ($1, $2)", [orgA, orgB]);
 		await admin.end();
