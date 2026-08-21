@@ -50,6 +50,7 @@ export const authConfig = {
 			const isPublic =
 				pathname === "/login" ||
 				pathname === "/register" ||
+				pathname === "/accept-invite" ||
 				pathname.startsWith("/api/") ||
 				pathname.startsWith("/_next") ||
 				pathname === "/favicon.ico";

@@ -50,7 +50,9 @@ export type AssertionValidationIssue = {
 		| "missing_object"
 		| "missing_provenance"
 		| "missing_proposer"
-		| "missing_recorded_at";
+		| "missing_recorded_at"
+		| "missing_approver"
+		| "invalid_validity_window";
 };
 
 export function validateAssertion(
@@ -68,6 +70,16 @@ export function validateAssertion(
 	}
 	if (!assertion.proposedBy) issues.push({ code: "missing_proposer" });
 	if (!assertion.recordedAt) issues.push({ code: "missing_recorded_at" });
+	if (assertion.status === "approved" && !assertion.approvedBy) {
+		issues.push({ code: "missing_approver" });
+	}
+	if (
+		assertion.validFrom &&
+		assertion.validUntil &&
+		new Date(assertion.validFrom).getTime() >= new Date(assertion.validUntil).getTime()
+	) {
+		issues.push({ code: "invalid_validity_window" });
+	}
 	return issues;
 }
 

@@ -19,9 +19,20 @@ function resolveConnectionString(url?: string): string {
 }
 
 export function createDb(url?: string) {
-	const pool = new Pool({ connectionString: resolveConnectionString(url), max: 5 });
-	return drizzle(pool, { schema });
+	if (url) {
+		return drizzle(new Pool({ connectionString: resolveConnectionString(url), max: 5 }), { schema });
+	}
+	return (defaultDb ??= drizzle(
+		new Pool({
+			connectionString: resolveConnectionString(),
+			max: Math.max(1, Number(process.env.DATABASE_POOL_SIZE) || 10),
+			application_name: "company-brain-os",
+		}),
+		{ schema },
+	));
 }
+
+let defaultDb: ReturnType<typeof drizzle<typeof schema>> | undefined;
 
 export type Db = ReturnType<typeof createDb>;
 export { schema };

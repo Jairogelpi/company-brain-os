@@ -7,9 +7,9 @@ import {
 } from "./graph-projection";
 
 /**
- * Rebuilds the materialized relationship projection for one organization.
- * Only edges owned by the assertion ledger are replaced; manually managed
- * graph edges remain untouched.
+ * Rebuilds the complete materialized graph for one organization. The ledger is
+ * the sole canonical source: rows that cannot be reproduced from approved,
+ * current assertions are deliberately removed from the projection.
  */
 export async function rebuildApprovedAssertionProjection(
 	assertions: AssertionRepository,
@@ -21,12 +21,12 @@ export async function rebuildApprovedAssertionProjection(
 		await assertions.listByOrganization(tenantId),
 	);
 
-	for (const edge of await graph.listEdges()) {
-		if (typeof edge.attributes?.assertionId === "string") {
-			await graph.deleteEdge(edge.id);
-		}
-	}
+	for (const edge of await graph.listEdges()) await graph.deleteEdge(edge.id);
+	for (const node of await graph.listNodes()) await graph.deleteNode(node.id);
 
+	for (const node of projection.nodes) {
+		await graph.createNode({ ...node, companyId: tenantId });
+	}
 	for (const edge of projection.edges) {
 		await graph.createEdge({ ...edge, companyId: tenantId });
 	}

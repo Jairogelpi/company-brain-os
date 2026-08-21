@@ -75,6 +75,7 @@ describe("authConfig callbacks", () => {
 		for (const pathname of [
 			"/login",
 			"/register",
+			"/accept-invite",
 			"/api/graph",
 			"/_next/static/app.js",
 			"/favicon.ico",

@@ -51,6 +51,20 @@ describe("assertion ledger contract", () => {
 		expect(validateAssertion({ ...scalarAssertion, scalarValue: 3 })).toEqual([]);
 	});
 
+	it("requires an explicit human approver for approved truth", () => {
+		expect(validateAssertion({ ...proposedAssertion, status: "approved" })).toContainEqual({
+			code: "missing_approver",
+		});
+	});
+
+	it("rejects an empty or backwards validity interval", () => {
+		expect(validateAssertion({
+			...proposedAssertion,
+			validFrom: "2026-08-01T00:00:00.000Z",
+			validUntil: "2026-08-01T00:00:00.000Z",
+		})).toContainEqual({ code: "invalid_validity_window" });
+	});
+
 	it("requires an entity or scalar object", () => {
 		const { objectEntityId: _objectEntityId, ...withoutObject } = proposedAssertion;
 

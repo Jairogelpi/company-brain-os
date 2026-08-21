@@ -55,6 +55,9 @@ describe("universal graph F0 invariants", () => {
 			"MANAGES",
 			"ADMINISTERS",
 			"DOCUMENTS",
+			"INTERACTS_WITH",
+			"REPLACES",
+			"VALIDATES",
 		]);
 	});
 

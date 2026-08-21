@@ -25,6 +25,9 @@ export const EDGE_TYPES = [
   "MANAGES",
   "ADMINISTERS",
   "DOCUMENTS",
+	"INTERACTS_WITH",
+	"REPLACES",
+	"VALIDATES",
 ] as const;
 
 export type EdgeType = (typeof EDGE_TYPES)[number];
@@ -127,6 +130,24 @@ const edgeEndpointRules = {
     { from: "Document", to: "Knowledge" },
     { from: "Document", to: "Process" },
   ],
+	INTERACTS_WITH: [
+		{ from: "Person", to: "ExternalParty" },
+		{ from: "Process", to: "ExternalParty" },
+		{ from: "OrganizationalUnit", to: "ExternalParty" },
+	],
+	REPLACES: [
+		{ from: "Person", to: "Person" },
+		{ from: "Process", to: "Process" },
+		{ from: "Asset", to: "Asset" },
+		{ from: "System", to: "System" },
+		{ from: "Document", to: "Document" },
+	],
+	VALIDATES: [
+		{ from: "Person", to: "Knowledge" },
+		{ from: "Person", to: "Process" },
+		{ from: "Person", to: "Asset" },
+		{ from: "Person", to: "Document" },
+	],
 } as const satisfies Record<EdgeType, readonly { from: NodeType | "*"; to: NodeType | "*" }[]>;
 
 export function isNodeType(value: string): value is NodeType {

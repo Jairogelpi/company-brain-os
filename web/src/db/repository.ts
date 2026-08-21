@@ -3,6 +3,7 @@ import type { Db } from "./index";
 import { nodes, edges, eventLog } from "./schema";
 import { and, eq } from "drizzle-orm";
 import { requireOrganizationId } from "@/auth/organization-context";
+import { withTenantTransaction } from "./tenant-transaction";
 
 // --- Domain types (subset used by repository) ---
 
@@ -159,15 +160,14 @@ export function createDrizzleGraphRepository(
 
 	return {
 		async createNode(node) {
-			await db.insert(nodes).values(nodeToRow(withCompany(node)));
+			await withTenantTransaction(db, tenantId, (tx) =>
+				tx.insert(nodes).values(nodeToRow(withCompany(node))),
+			);
 		},
 
 		async readNode(id) {
-			const rows = await db
-				.select()
-				.from(nodes)
-				.where(scopeNode(eq(nodes.id, id)))
-				.limit(1);
+			const rows = await withTenantTransaction(db, tenantId, (tx) => tx
+				.select().from(nodes).where(scopeNode(eq(nodes.id, id))).limit(1));
 			return rows[0] ? rowToNode(rows[0]) : undefined;
 		},
 
@@ -185,31 +185,32 @@ export function createDrizzleGraphRepository(
 				set.validationState = patch.validationState as never;
 			if (patch.confidence !== undefined) set.confidence = patch.confidence;
 			if (Object.keys(set).length === 0) return;
-			await db.update(nodes).set(set).where(scopeNode(eq(nodes.id, id)));
+			await withTenantTransaction(db, tenantId, (tx) =>
+				tx.update(nodes).set(set).where(scopeNode(eq(nodes.id, id))),
+			);
 		},
 
 		async deleteNode(id) {
-			await db.delete(nodes).where(scopeNode(eq(nodes.id, id)));
+			await withTenantTransaction(db, tenantId, (tx) =>
+				tx.delete(nodes).where(scopeNode(eq(nodes.id, id))),
+			);
 		},
 
 		async listNodes() {
-			const rows = await db
-				.select()
-				.from(nodes)
-				.where(scopeNode(eq(nodes.archived, false)));
+			const rows = await withTenantTransaction(db, tenantId, (tx) => tx
+				.select().from(nodes).where(scopeNode(eq(nodes.archived, false))));
 			return rows.map(rowToNode);
 		},
 
 		async createEdge(edge) {
-			await db.insert(edges).values(edgeToRow(withCompany(edge)));
+			await withTenantTransaction(db, tenantId, (tx) =>
+				tx.insert(edges).values(edgeToRow(withCompany(edge))),
+			);
 		},
 
 		async readEdge(id) {
-			const rows = await db
-				.select()
-				.from(edges)
-				.where(scopeEdge(eq(edges.id, id)))
-				.limit(1);
+			const rows = await withTenantTransaction(db, tenantId, (tx) => tx
+				.select().from(edges).where(scopeEdge(eq(edges.id, id))).limit(1));
 			return rows[0] ? rowToEdge(rows[0]) : undefined;
 		},
 
@@ -217,33 +218,32 @@ export function createDrizzleGraphRepository(
 			const set: Record<string, unknown> = {};
 			if (patch.attributes) set.attributes = patch.attributes;
 			if (Object.keys(set).length === 0) return;
-			await db.update(edges).set(set).where(scopeEdge(eq(edges.id, id)));
+			await withTenantTransaction(db, tenantId, (tx) =>
+				tx.update(edges).set(set).where(scopeEdge(eq(edges.id, id))),
+			);
 		},
 
 		async deleteEdge(id) {
-			await db.delete(edges).where(scopeEdge(eq(edges.id, id)));
+			await withTenantTransaction(db, tenantId, (tx) =>
+				tx.delete(edges).where(scopeEdge(eq(edges.id, id))),
+			);
 		},
 
 		async listEdges() {
-			const rows = await db
-				.select()
-				.from(edges)
-				.where(scopeEdge(eq(edges.archived, false)));
+			const rows = await withTenantTransaction(db, tenantId, (tx) => tx
+				.select().from(edges).where(scopeEdge(eq(edges.archived, false))));
 			return rows.map(rowToEdge);
 		},
 
 		async saveEvent(event) {
-			await db.insert(eventLog).values(eventToRow(withCompany(event)));
+			await withTenantTransaction(db, tenantId, (tx) =>
+				tx.insert(eventLog).values(eventToRow(withCompany(event))),
+			);
 		},
 
 		async listEvents() {
-			const rows = await db
-				.select()
-				.from(eventLog)
-				.where(
-					eq(eventLog.companyId, tenantId),
-				)
-				.orderBy(eventLog.createdAt);
+			const rows = await withTenantTransaction(db, tenantId, (tx) => tx
+				.select().from(eventLog).where(eq(eventLog.companyId, tenantId)).orderBy(eventLog.createdAt));
 			return rows.map(rowToEvent);
 		},
 	};

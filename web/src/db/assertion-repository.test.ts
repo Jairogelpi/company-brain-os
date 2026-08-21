@@ -34,4 +34,20 @@ describe("assertion repository", () => {
 			"missing_provenance",
 		);
 	});
+
+	it("creates an atomic batch with an evidence link for every assertion", async () => {
+		const repo = createInMemoryAssertionRepository();
+		await repo.createBatch([
+			assertion,
+			{ ...assertion, id: "a-2", predicate: "VALIDATES" },
+		]);
+		expect(new Set(await repo.listEvidenceAssertionIds("org-1")))
+			.toEqual(new Set(["a-1", "a-2"]));
+
+		await expect(repo.createBatch([
+			{ ...assertion, id: "a-3" },
+			{ ...assertion, id: "a-3", predicate: "VALIDATES" },
+		])).rejects.toThrow(/already exists/);
+		expect(await repo.get("a-3")).toBeUndefined();
+	});
 });

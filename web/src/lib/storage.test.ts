@@ -24,4 +24,14 @@ describe("disk storage", () => {
 		await expect(storage.size("clip.mp3")).resolves.toBe(5);
 		await expect(storage.size("missing.mp3")).resolves.toBeNull();
 	});
+
+	it("supports tenant partitions and rejects traversal keys", async () => {
+		process.env.STORAGE_DIR = await mkdtemp(join(tmpdir(), "company-brain-os-"));
+		resetStorageForTests();
+		const storage = getStorage();
+		await storage.put("organizations/tenant/clip.mp3", Buffer.from("hello"));
+
+		await expect(storage.get("organizations/tenant/clip.mp3")).resolves.toEqual(Buffer.from("hello"));
+		await expect(storage.put("../escape", Buffer.from("bad"))).rejects.toThrow("Invalid storage key");
+	});
 });

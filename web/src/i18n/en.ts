@@ -15,7 +15,7 @@ export default {
   workspaceDesc: "You'll become the owner of a new company workspace.",
   companyName: "Company name",
   companyPh: "Acme Corp",
-  passMin: "Minimum 8 characters",
+  passMin: "12–128 characters",
   creating: "Creating account…",
   haveAccount: "Already have an account?",
   logIn: "Log in",

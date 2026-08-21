@@ -47,7 +47,10 @@ export async function POST(request: Request) {
 			proposalIndex: i,
 			decision: "approve" as const,
 		}));
-		const service = getGraphService(user.companyId, user.id);
+		const service = getGraphService(user.companyId, user.id, {
+			sourceType: "ingestion_review",
+			sourceId: pending.map((item) => item.id).sort().join(","),
+		});
 		try {
 			const events = await service.applyProposalsWithDecisions(
 				proposals,

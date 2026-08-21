@@ -31,7 +31,7 @@ export type GraphServiceOptions = {
 	companyId?: string;
 };
 
-// --- Graph Service (deterministic, in-memory, mutable source of truth) ---
+// --- Graph Service (deterministic in-memory domain/test adapter) ---
 
 export interface GraphService {
 	// Node CRUD

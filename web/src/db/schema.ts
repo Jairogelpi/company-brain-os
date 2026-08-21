@@ -7,6 +7,7 @@ import {
 	pgTable,
 	text,
 	unique,
+	uniqueIndex,
 	timestamp,
 	boolean,
 } from "drizzle-orm/pg-core";
@@ -131,12 +132,16 @@ export const nodeEmbeddings = pgTable(
 		nodeId: text("node_id")
 			.primaryKey()
 			.references(() => nodes.id, { onDelete: "cascade" }),
+		companyId: text("company_id").notNull(),
 		embedding: vector768("embedding").notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
 	},
-	(table) => [index("node_embeddings_node_idx").on(table.nodeId)],
+	(table) => [
+		index("node_embeddings_node_idx").on(table.nodeId),
+		index("node_embeddings_company_idx").on(table.companyId),
+	],
 );
 
 export const memberships = pgTable(
@@ -190,6 +195,22 @@ export const users = pgTable(
 			.$type<string[]>()
 			.notNull()
 			.default([]),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => [
+		index("users_email_idx").on(table.email),
+		index("users_company_idx").on(table.companyId),
+	],
+);
+
+/** Tenant-protected HR/profile data, deliberately separate from login identity. */
+export const userProfiles = pgTable(
+	"user_profiles",
+	{
+		userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+		companyId: text("company_id").notNull(),
 		position: text("position"),
 		department: text("department"),
 		salary: integer("salary"),
@@ -198,13 +219,13 @@ export const users = pgTable(
 		startDate: date("start_date"),
 		phone: text("phone"),
 		bio: text("bio"),
-		createdAt: timestamp("created_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
+		/** Explicit link from an authenticated user to their canonical Person projection. */
+		personNodeId: text("person_node_id"),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 	},
 	(table) => [
-		index("users_email_idx").on(table.email),
-		index("users_company_idx").on(table.companyId),
+		index("user_profiles_company_idx").on(table.companyId),
+		uniqueIndex("user_profiles_company_person_unique").on(table.companyId, table.personNodeId),
 	],
 );
 
@@ -279,6 +300,121 @@ export const missionSubmissions = pgTable(
 	(table) => [
 		index("mission_submissions_company_idx").on(table.companyId),
 		index("mission_submissions_mission_idx").on(table.missionId),
+	],
+);
+
+export const missionTransferVerifications = pgTable(
+	"mission_transfer_verifications",
+	{
+		id: text("id").primaryKey(),
+		companyId: text("company_id").notNull(),
+		missionId: text("mission_id").notNull().references(() => missions.id, { onDelete: "cascade" }),
+		targetNodeId: text("target_node_id").notNull(),
+		backupPersonId: text("backup_person_id").notNull(),
+		assessorId: text("assessor_id").notNull(),
+		assessorPersonId: text("assessor_person_id"),
+		competencyLevel: integer("competency_level").notNull(),
+		accessVerified: boolean("access_verified").notNull().default(false),
+		evidenceRefs: jsonb("evidence_refs").$type<string[]>().notNull().default([]),
+		status: text("status").$type<"proposed" | "approved" | "rejected">().notNull().default("proposed"),
+		reviewerId: text("reviewer_id"),
+		reviewerPersonId: text("reviewer_person_id"),
+		rejectionReason: text("rejection_reason"),
+		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+		reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+	},
+	(table) => [
+		index("mission_transfer_verifications_company_idx").on(table.companyId),
+		index("mission_transfer_verifications_mission_idx").on(table.missionId),
+		index("mission_transfer_verifications_status_idx").on(table.status),
+	],
+);
+
+export const storedUploads = pgTable(
+	"stored_uploads",
+	{
+		id: text("id").primaryKey(),
+		companyId: text("company_id").notNull(),
+		filename: text("filename").notNull(),
+		originalName: text("original_name").notNull(),
+		mimeType: text("mime_type").notNull(),
+		sizeBytes: integer("size_bytes").notNull(),
+		contentSha256: text("content_sha256"),
+		uploadedBy: text("uploaded_by").notNull(),
+		scanProvider: text("scan_provider").notNull(),
+		status: text("status").$type<"available" | "rejected" | "expired">().notNull().default("available"),
+		retentionUntil: timestamp("retention_until", { withTimezone: true }).notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+	},
+	(table) => [
+		unique("stored_uploads_company_filename_unique").on(table.companyId, table.filename),
+		index("stored_uploads_company_idx").on(table.companyId),
+		index("stored_uploads_retention_idx").on(table.retentionUntil),
+	],
+);
+
+/** Durable user notification plus delivery-outbox state. */
+export const notifications = pgTable(
+	"notifications",
+	{
+		id: text("id").primaryKey(),
+		companyId: text("company_id").notNull(),
+		recipientId: text("recipient_id"),
+		channel: text("channel").$type<"email" | "in_app">().notNull(),
+		destination: text("destination"),
+		title: text("title").notNull(),
+		body: text("body").notNull(),
+		actionUrl: text("action_url"),
+		status: text("status")
+			.$type<"pending" | "processing" | "delivered" | "failed" | "dead_letter">()
+			.notNull()
+			.default("pending"),
+		attempts: integer("attempts").notNull().default(0),
+		nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		lastError: text("last_error"),
+		idempotencyKey: text("idempotency_key").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+		deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+		readAt: timestamp("read_at", { withTimezone: true }),
+	},
+	(table) => [
+		unique("notifications_company_idempotency_unique").on(
+			table.companyId,
+			table.idempotencyKey,
+		),
+		index("notifications_recipient_idx").on(table.companyId, table.recipientId),
+		index("notifications_delivery_idx").on(
+			table.companyId,
+			table.status,
+			table.nextAttemptAt,
+		),
+	],
+);
+
+export const userInvitations = pgTable(
+	"user_invitations",
+	{
+		id: text("id").primaryKey(),
+		companyId: text("company_id").notNull(),
+		email: text("email").notNull(),
+		role: text("role").$type<"validator" | "contributor" | "viewer">().notNull(),
+		tokenHash: text("token_hash").notNull().unique(),
+		invitedBy: text("invited_by").notNull(),
+		status: text("status")
+			.$type<"pending" | "accepted" | "revoked" | "expired">()
+			.notNull()
+			.default("pending"),
+		expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+		acceptedBy: text("accepted_by"),
+		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+		acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+	},
+	(table) => [
+		index("user_invitations_company_idx").on(table.companyId),
+		index("user_invitations_email_idx").on(table.companyId, table.email),
+		index("user_invitations_status_idx").on(table.companyId, table.status),
 	],
 );
 

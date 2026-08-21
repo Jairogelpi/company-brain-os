@@ -7,6 +7,8 @@ import {
 	type GraphNode,
 	type KnowledgeNode,
 } from "@/domain/graph";
+import { canPerform } from "@/auth/permissions";
+import { patchRequiresValidation } from "@/auth/graph-field-permissions";
 
 // Cost-model attribute keys (financial exposure).
 const COST_KEYS = new Set([
@@ -18,7 +20,6 @@ const COST_KEYS = new Set([
 
 const CRITICALITY = new Set(["low", "medium", "high"]);
 const VALIDATION = new Set(["draft", "proposed", "validated", "retired"]);
-
 function slug(s: string): string {
 	return (
 		s
@@ -126,6 +127,13 @@ export async function PATCH(request: Request) {
 		return NextResponse.json({ error: "id required" }, { status: 400 });
 	}
 
+	const src = body.patch ?? {};
+	if (patchRequiresValidation(src) && !canPerform(user, "knowledge.validate")) {
+		return NextResponse.json(
+			{ error: "Validator role required for risk and knowledge-control fields" },
+			{ status: 403 },
+		);
+	}
 	const service = getGraphService(user.companyId, user.id);
 	const current = await service.readNode(body.id);
 	if (!current) {
@@ -133,7 +141,6 @@ export async function PATCH(request: Request) {
 	}
 
 	const patch: Partial<GraphNode | KnowledgeNode> = {};
-	const src = body.patch ?? {};
 
 	if (typeof src.name === "string" && src.name.trim()) {
 		patch.name = src.name.trim();

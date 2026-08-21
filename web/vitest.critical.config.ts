@@ -29,6 +29,7 @@ export default mergeConfig(
 				"src/domain/assertion-projection-service.test.ts",
 				"src/domain/risk-rules.test.ts",
 				"src/domain/risk-engine.test.ts",
+				"src/domain/canonical-pedro-laura.e2e.test.ts",
 			],
 		},
 	}),

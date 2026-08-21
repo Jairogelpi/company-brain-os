@@ -12,6 +12,7 @@ import LangToggle from "@/components/ui/LangToggle";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/components/auth/LanguageContext";
 import type { ReactNode } from "react";
+import NotificationBell from "@/components/layout/NotificationBell";
 
 function ThemeToggle() {
 	const { theme, setTheme } = useTheme();
@@ -116,6 +117,7 @@ function AppContent({ children }: { children: ReactNode }) {
 						<div className="topbar-search">
 							<GlobalSearch />
 						</div>
+						<NotificationBell />
 
 						{/* Divider */}
 						<div

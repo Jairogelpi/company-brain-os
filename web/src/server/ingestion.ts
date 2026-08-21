@@ -2,6 +2,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import { createDb } from "@/db";
 import { ingestionItems } from "@/db/schema";
 import type { GraphOperationProposal } from "@/domain/interview";
+import { withTenantTransaction } from "@/db/tenant-transaction";
 
 /** Durable inbox queue + ingest audit trail, scoped to a company (tenant). */
 
@@ -27,7 +28,8 @@ export async function savePending(
 		status: "pending" as const,
 	}));
 	if (rows.length > 0) {
-		await createDb().insert(ingestionItems).values(rows);
+		const db = createDb();
+		await withTenantTransaction(db, companyId, (tx) => tx.insert(ingestionItems).values(rows));
 	}
 	return rows.map((r) => ({
 		id: r.id,
@@ -38,8 +40,8 @@ export async function savePending(
 }
 
 export async function listPending(companyId: string): Promise<PendingItem[]> {
-	const rows = await createDb()
-		.select()
+	const db = createDb();
+	const rows = await withTenantTransaction(db, companyId, (tx) => tx.select()
 		.from(ingestionItems)
 		.where(
 			and(
@@ -47,7 +49,7 @@ export async function listPending(companyId: string): Promise<PendingItem[]> {
 				eq(ingestionItems.status, "pending"),
 			),
 		)
-		.orderBy(ingestionItems.createdAt);
+		.orderBy(ingestionItems.createdAt));
 	return rows.map((r) => ({
 		id: r.id,
 		source: r.source,
@@ -65,8 +67,8 @@ export async function getPendingByIds(
 	ids: string[],
 ): Promise<PendingItem[]> {
 	if (ids.length === 0) return [];
-	const rows = await createDb()
-		.select()
+	const db = createDb();
+	const rows = await withTenantTransaction(db, companyId, (tx) => tx.select()
 		.from(ingestionItems)
 		.where(
 			and(
@@ -74,7 +76,7 @@ export async function getPendingByIds(
 				eq(ingestionItems.status, "pending"),
 				inArray(ingestionItems.id, ids),
 			),
-		);
+		));
 	return rows.map((r) => ({
 		id: r.id,
 		source: r.source,
@@ -89,13 +91,13 @@ export async function markReviewed(
 	status: "approved" | "rejected",
 ): Promise<void> {
 	if (ids.length === 0) return;
-	await createDb()
-		.update(ingestionItems)
+	const db = createDb();
+	await withTenantTransaction(db, companyId, (tx) => tx.update(ingestionItems)
 		.set({ status, reviewedAt: new Date() })
 		.where(
 			and(
 				eq(ingestionItems.companyId, companyId),
 				inArray(ingestionItems.id, ids),
 			),
-		);
+		));
 }

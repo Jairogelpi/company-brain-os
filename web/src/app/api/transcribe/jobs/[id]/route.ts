@@ -10,7 +10,7 @@ export async function GET(
 	if (user instanceof NextResponse) return user;
 
 	const { id } = await params;
-	const job = await getJob(id);
+	const job = await getJob(id, user.companyId);
 	if (!job || job.companyId !== user.companyId) {
 		return NextResponse.json({ error: "Job not found" }, { status: 404 });
 	}

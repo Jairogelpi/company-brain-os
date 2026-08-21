@@ -120,6 +120,69 @@
       "when": 1785615300000,
       "tag": "0017_canonicalize_legacy_graph_nodes",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1785616200000,
+      "tag": "0018_canonical_ledger_backfill",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1785617100000,
+      "tag": "0019_verified_transfer",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1785618000000,
+      "tag": "0020_business_tenant_security",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1785618900000,
+      "tag": "0021_distributed_rate_limits",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1785619800000,
+      "tag": "0022_stored_upload_controls",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1785620700000,
+      "tag": "0023_notification_outbox_and_tenant_coverage",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1785621600000,
+      "tag": "0024_tenant_user_profiles",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1785622500000,
+      "tag": "0025_user_invitations",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1785623400000,
+      "tag": "0026_explicit_person_identity",
+      "breakpoints": true
     }
   ]
 }

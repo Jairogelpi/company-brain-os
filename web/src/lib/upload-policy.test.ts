@@ -8,6 +8,7 @@ import {
 	maxBytesForMime,
 	MAX_MEDIA_BYTES,
 	MAX_UPLOAD_BYTES,
+	matchesMimeSignature,
 } from "./upload-policy";
 
 describe("upload policy", () => {
@@ -54,5 +55,12 @@ describe("upload policy", () => {
 		expect(maxBytesForMime("audio/mpeg")).toBe(MAX_MEDIA_BYTES);
 		expect(maxBytesForMime("video/webm")).toBe(MAX_MEDIA_BYTES);
 		expect(maxBytesForMime("text/csv")).toBe(MAX_UPLOAD_BYTES);
+	});
+
+	it("checks magic bytes instead of trusting the multipart MIME", () => {
+		expect(matchesMimeSignature("application/pdf", Buffer.from("%PDF-1.7"))).toBe(true);
+		expect(matchesMimeSignature("application/pdf", Buffer.from("<script>alert(1)</script>"))).toBe(false);
+		expect(matchesMimeSignature("image/png", Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))).toBe(true);
+		expect(matchesMimeSignature("text/plain", Buffer.from([0x41, 0x00, 0x42]))).toBe(false);
 	});
 });

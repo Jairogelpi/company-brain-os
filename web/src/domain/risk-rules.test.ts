@@ -5,8 +5,8 @@ describe("continuity risk rules", () => {
 	it("returns a versioned, explainable single-point-of-failure rule", () => {
 		expect(explainRiskRule("single_point_of_failure")).toEqual({
 			id: "knowledge-single-point-of-failure",
-			version: 1,
-			condition: "bus_factor=1 AND criticality=high AND documented=false",
+			version: 2,
+			condition: "bus_factor=1 AND criticality=high",
 			requiredEvidence: ["mastery_assertion", "criticality_assertion"],
 		});
 	});

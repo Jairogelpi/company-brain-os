@@ -4,6 +4,7 @@ import {
 	assignMission,
 	listMissions,
 	listSubmissions,
+	listTransferVerifications,
 	saveMissions,
 	transitionMissionStatus,
 } from "@/server/missions";
@@ -33,11 +34,12 @@ const PRIORITY: Record<string, "low" | "medium" | "high" | "critical"> = {
 export async function GET() {
 	const user = await requireApiUser();
 	if (user instanceof NextResponse) return user;
-	const [items, submissions] = await Promise.all([
+	const [items, submissions, transferVerifications] = await Promise.all([
 		listMissions(user.companyId),
 		listSubmissions(user.companyId),
+		listTransferVerifications(user.companyId),
 	]);
-	return NextResponse.json({ items, submissions, count: items.length });
+	return NextResponse.json({ items, submissions, transferVerifications, count: items.length });
 }
 
 /** POST /api/missions — persist a generated playbook as missions. */
@@ -85,7 +87,7 @@ export async function PATCH(request: Request) {
 	let body: {
 		id?: string;
 		to?: MissionStatus;
-		assigneeId?: string;
+		assigneeId?: string | null;
 		instructions?: string;
 	};
 	try {
@@ -99,7 +101,7 @@ export async function PATCH(request: Request) {
 	try {
 		if (body.assigneeId !== undefined || body.instructions !== undefined) {
 			await assignMission(user.companyId, body.id, {
-				assigneeId: body.assigneeId,
+				assigneeId: body.assigneeId ?? "",
 				instructions: body.instructions,
 			});
 		}

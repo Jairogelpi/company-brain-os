@@ -1,8 +1,9 @@
 import { and, asc, eq } from "drizzle-orm";
 import { createDb, type Db } from "@/db";
-import { transcriptionJobs } from "@/db/schema";
+import { companies, transcriptionJobs } from "@/db/schema";
 import type { TranscriptionProvider } from "@/ai/transcription";
 import { requireOrganizationId } from "@/auth/organization-context";
+import { withTenantTransaction } from "@/db/tenant-transaction";
 
 export type TranscriptionJobStatus =
 	| "queued"
@@ -29,11 +30,12 @@ export type TranscriptionJobPatch = Partial<{
 
 export interface TranscriptionJobStore {
 	createJob(input: CreateTranscriptionJobInput): Promise<TranscriptionJob>;
-	getJob(id: string): Promise<TranscriptionJob | undefined>;
+	getJob(id: string, companyId?: string): Promise<TranscriptionJob | undefined>;
 	updateStatus(
 		id: string,
 		status: TranscriptionJobStatus,
 		patch?: TranscriptionJobPatch,
+		companyId?: string,
 	): Promise<TranscriptionJob>;
 	claimQueued(limit?: number): Promise<TranscriptionJob[]>;
 	reclaimProcessing(): Promise<number>;
@@ -121,66 +123,100 @@ export function createInMemoryTranscriptionJobStore(
 export function createDrizzleTranscriptionJobStore(
 	db: Db = createDb(),
 ): TranscriptionJobStore {
+	async function tenantIds(companyId?: string): Promise<string[]> {
+		if (companyId) return [requireOrganizationId(companyId)];
+		return (await db.select({ id: companies.id }).from(companies)).map((row) => row.id);
+	}
+
 	return {
 		async createJob(input) {
 			const id = input.id ?? newJobId();
-			const rows = await db
+			const companyId = requireOrganizationId(input.companyId);
+			const rows = await withTenantTransaction(db, companyId, (tx) => tx
 				.insert(transcriptionJobs)
-				.values({ ...input, id })
-				.returning();
+				.values({ ...input, companyId, id })
+				.returning());
 			return rows[0];
 		},
 
-		async getJob(id) {
-			const rows = await db
-				.select()
-				.from(transcriptionJobs)
-				.where(eq(transcriptionJobs.id, id))
-				.limit(1);
-			return rows[0];
+		async getJob(id, companyId) {
+			for (const tenantId of await tenantIds(companyId)) {
+				const rows = await withTenantTransaction(db, tenantId, (tx) => tx
+					.select()
+					.from(transcriptionJobs)
+					.where(and(
+						eq(transcriptionJobs.companyId, tenantId),
+						eq(transcriptionJobs.id, id),
+					))
+					.limit(1));
+				if (rows[0]) return rows[0];
+			}
+			return undefined;
 		},
 
-		async updateStatus(id, status, patch = {}) {
-			const rows = await db
-				.update(transcriptionJobs)
-				.set({ ...patch, status, updatedAt: now() })
-				.where(eq(transcriptionJobs.id, id))
-				.returning();
-			if (!rows[0]) throw new Error(`Transcription job not found: ${id}`);
-			return rows[0];
+		async updateStatus(id, status, patch = {}, companyId) {
+			for (const tenantId of await tenantIds(companyId)) {
+				const rows = await withTenantTransaction(db, tenantId, (tx) => tx
+					.update(transcriptionJobs)
+					.set({ ...patch, status, updatedAt: now() })
+					.where(and(
+						eq(transcriptionJobs.companyId, tenantId),
+						eq(transcriptionJobs.id, id),
+					))
+					.returning());
+				if (rows[0]) return rows[0];
+			}
+			throw new Error(`Transcription job not found: ${id}`);
 		},
 
 		async claimQueued(limit = 1) {
-			const queued = await db
-				.select()
-				.from(transcriptionJobs)
-				.where(eq(transcriptionJobs.status, "queued"))
-				.orderBy(asc(transcriptionJobs.createdAt))
-				.limit(limit);
 			const claimed: TranscriptionJob[] = [];
-			for (const job of queued) {
-				const rows = await db
-					.update(transcriptionJobs)
-					.set({ status: "processing", updatedAt: now() })
-					.where(
-						and(
-							eq(transcriptionJobs.id, job.id),
+			for (const tenantId of await tenantIds()) {
+				if (claimed.length >= limit) break;
+				const rows = await withTenantTransaction(db, tenantId, async (tx) => {
+					const queued = await tx
+						.select()
+						.from(transcriptionJobs)
+						.where(and(
+							eq(transcriptionJobs.companyId, tenantId),
 							eq(transcriptionJobs.status, "queued"),
-						),
-					)
-					.returning();
-				if (rows[0]) claimed.push(rows[0]);
+						))
+						.orderBy(asc(transcriptionJobs.createdAt))
+						.limit(limit - claimed.length);
+					const tenantClaimed: TranscriptionJob[] = [];
+					for (const job of queued) {
+						const updated = await tx
+							.update(transcriptionJobs)
+							.set({ status: "processing", updatedAt: now() })
+							.where(and(
+								eq(transcriptionJobs.companyId, tenantId),
+								eq(transcriptionJobs.id, job.id),
+								eq(transcriptionJobs.status, "queued"),
+							))
+							.returning();
+						if (updated[0]) tenantClaimed.push(updated[0]);
+					}
+					return tenantClaimed;
+				});
+				claimed.push(...rows);
 			}
 			return claimed;
 		},
 
 		async reclaimProcessing() {
-			const rows = await db
-				.update(transcriptionJobs)
-				.set({ status: "queued", updatedAt: now() })
-				.where(eq(transcriptionJobs.status, "processing"))
-				.returning({ id: transcriptionJobs.id });
-			return rows.length;
+			let count = 0;
+			for (const tenantId of await tenantIds()) {
+				const rows = await withTenantTransaction(db, tenantId, (tx) => tx
+					.update(transcriptionJobs)
+					.set({ status: "queued", updatedAt: now() })
+					.where(and(
+						eq(transcriptionJobs.companyId, tenantId),
+						eq(transcriptionJobs.status, "processing"),
+					))
+					.returning({ id: transcriptionJobs.id }));
+				count += rows.length;
+			}
+			return count;
 		},
 	};
 }
@@ -198,9 +234,9 @@ function resolveDefaultStore(): TranscriptionJobStore {
  */
 export const defaultTranscriptionJobStore: TranscriptionJobStore = {
 	createJob: (input) => resolveDefaultStore().createJob(input),
-	getJob: (id) => resolveDefaultStore().getJob(id),
-	updateStatus: (id, status, patch) =>
-		resolveDefaultStore().updateStatus(id, status, patch),
+	getJob: (id, companyId) => resolveDefaultStore().getJob(id, companyId),
+	updateStatus: (id, status, patch, companyId) =>
+		resolveDefaultStore().updateStatus(id, status, patch, companyId),
 	claimQueued: (limit) => resolveDefaultStore().claimQueued(limit),
 	reclaimProcessing: () => resolveDefaultStore().reclaimProcessing(),
 };
@@ -209,16 +245,17 @@ export function createJob(input: CreateTranscriptionJobInput) {
 	return defaultTranscriptionJobStore.createJob(input);
 }
 
-export function getJob(id: string) {
-	return defaultTranscriptionJobStore.getJob(id);
+export function getJob(id: string, companyId?: string) {
+	return defaultTranscriptionJobStore.getJob(id, companyId);
 }
 
 export function updateStatus(
 	id: string,
 	status: TranscriptionJobStatus,
 	patch?: TranscriptionJobPatch,
+	companyId?: string,
 ) {
-	return defaultTranscriptionJobStore.updateStatus(id, status, patch);
+	return defaultTranscriptionJobStore.updateStatus(id, status, patch, companyId);
 }
 
 export function claimQueued(limit?: number) {

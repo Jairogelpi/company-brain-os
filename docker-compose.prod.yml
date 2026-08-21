@@ -30,6 +30,34 @@ services:
         condition: service_healthy
     restart: "no"
 
+  provision-app-role:
+    image: postgres:16-alpine
+    command: >-
+      sh -ec 'psql -h postgres -U postgres -d company_brain_os
+      -v app_password="$$APP_DB_PASSWORD"
+      -f /scripts/provision-app-role.sql'
+    environment:
+      PGPASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?APP_DB_PASSWORD is required}
+    volumes:
+      - ./web/scripts/provision-app-role.sql:/scripts/provision-app-role.sql:ro
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: "no"
+
+  clamav:
+    image: clamav/clamav:1.4
+    volumes:
+      - clamav-db:/var/lib/clamav
+    healthcheck:
+      test: ["CMD", "clamdcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+    restart: unless-stopped
+
   app:
     build:
       context: ./web
@@ -38,11 +66,15 @@ services:
       - "3000:3000"
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgres://postgres:${DB_PASSWORD}@postgres:5432/company_brain_os
+      DATABASE_URL: postgres://company_brain_app:${APP_DB_PASSWORD}@postgres:5432/company_brain_os
       AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET is required}
       AUTH_TRUST_HOST: "true"
       STORAGE_DRIVER: ${STORAGE_DRIVER:-disk}
       STORAGE_DIR: /data/uploads
+      MALWARE_SCAN_MODE: clamav
+      CLAMAV_HOST: clamav
+      CLAMAV_PORT: "3310"
+      TRANSCRIPTION_WORKER_DISABLED: "1"
       # Optional AI (Gemini) for adaptive interview questions. Falls back to the
       # fixed question bank when unset.
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
@@ -52,10 +84,38 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      migrate:
+      provision-app-role:
+        condition: service_completed_successfully
+      clamav:
+        condition: service_healthy
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+      target: builder
+    command: npm run worker
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://company_brain_app:${APP_DB_PASSWORD}@postgres:5432/company_brain_os
+      STORAGE_DRIVER: ${STORAGE_DRIVER:-disk}
+      STORAGE_DIR: /data/uploads
+      TRANSCRIPTION_PROVIDER: ${TRANSCRIPTION_PROVIDER:-none}
+      TRANSCRIPTION_WORKER_INTERVAL_MS: ${TRANSCRIPTION_WORKER_INTERVAL_MS:-5000}
+      NOTIFICATION_WORKER_INTERVAL_MS: ${NOTIFICATION_WORKER_INTERVAL_MS:-5000}
+      UPLOAD_RETENTION_WORKER_INTERVAL_MS: ${UPLOAD_RETENTION_WORKER_INTERVAL_MS:-60000}
+      NOTIFICATION_EMAIL_WEBHOOK_URL: ${NOTIFICATION_EMAIL_WEBHOOK_URL:-}
+      NOTIFICATION_EMAIL_WEBHOOK_TOKEN: ${NOTIFICATION_EMAIL_WEBHOOK_TOKEN:-}
+      APP_BASE_URL: ${APP_BASE_URL:?APP_BASE_URL is required}
+    volumes:
+      - uploads:/data/uploads
+    depends_on:
+      provision-app-role:
         condition: service_completed_successfully
     restart: unless-stopped
 
 volumes:
   pgdata:
   uploads:
+  clamav-db:

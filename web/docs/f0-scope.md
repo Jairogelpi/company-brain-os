@@ -1,19 +1,5 @@
-# F0 scope
+# Historical F0 scope
 
-F0 is the smallest reviewable foundation slice.
+F0 was the initial repository scaffold. It is complete and no longer defines current product scope.
 
-## Included
-
-- Next.js App Router scaffold under `web/`.
-- Universal graph type catalog and invariant validation.
-- Runnable Vitest coverage for graph invariants.
-- Drizzle schema and generated SQL migration for core graph tables.
-- AGE setup notes only; AGE is not required for local tests.
-
-## Excluded until later phases
-
-- Authentication and memberships.
-- Canvas/tldraw.
-- AI extraction calls.
-- Missions and employee capture.
-- Metrics, risk engine, and first-alarm interview runtime.
+The accepted contract is [Company Brain OS v4](../../docs/product/COMPANY_BRAIN_OS_V4.md). Current implementation status and quality gates are maintained in the repository [README](../../README.md) and [progress log](../../progress.md).

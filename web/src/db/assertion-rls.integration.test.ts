@@ -19,7 +19,7 @@ describe.skipIf(!databaseUrl)("assertion ledger RLS", () => {
 		await admin.query(`grant select, insert on assertions to ${role}`);
 		await admin.query("begin");
 		await admin.query("select set_config('app.organization_id', $1, true)", [orgA]);
-		await admin.query("insert into assertions (id, organization_id, subject_entity_id, predicate, source_type, source_id, status, proposed_by, confidence_class, metadata) values ($1, $2, 'person', 'MASTERS', 'test', 'source-a', 'approved', 'owner', 'verified', '{}'::jsonb)", [`assertion-${suffix}`, orgA]);
+		await admin.query("insert into assertions (id, organization_id, subject_entity_id, predicate, source_type, source_id, status, proposed_by, approved_by, confidence_class, metadata) values ($1, $2, 'person', 'MASTERS', 'test', 'source-a', 'approved', 'owner', 'owner', 'verified', '{}'::jsonb)", [`assertion-${suffix}`, orgA]);
 		await admin.query("commit");
 	});
 
@@ -41,7 +41,7 @@ describe.skipIf(!databaseUrl)("assertion ledger RLS", () => {
 		await app.query("select set_config('app.organization_id', $1, true)", [orgB]);
 		const hidden = await app.query("select count(*)::int as count from assertions");
 		expect(hidden.rows[0].count).toBe(0);
-		await expect(app.query("insert into assertions (id, organization_id, subject_entity_id, predicate, source_type, source_id, status, proposed_by, confidence_class, metadata) values ($1, $2, 'person', 'MASTERS', 'test', 'source-b', 'approved', 'owner', 'verified', '{}'::jsonb)", [`cross-${suffix}`, orgA])).rejects.toThrow(/row-level security/i);
+		await expect(app.query("insert into assertions (id, organization_id, subject_entity_id, predicate, source_type, source_id, status, proposed_by, approved_by, confidence_class, metadata) values ($1, $2, 'person', 'MASTERS', 'test', 'source-b', 'approved', 'owner', 'owner', 'verified', '{}'::jsonb)", [`cross-${suffix}`, orgA])).rejects.toThrow(/row-level security/i);
 		await app.query("rollback");
 		await app.end();
 	});

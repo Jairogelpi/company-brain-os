@@ -18,9 +18,11 @@ import { buildNodeContent } from "@/ai/node-content";
 import type { SearchResult } from "@/ai/vector-store";
 import type { GraphNode, GraphEdge } from "@/domain/graph";
 import type { RetrievedContext } from "./rag-prompt";
+import { withTenantTransaction } from "@/db/tenant-transaction";
 
 export type NodeLookup = (
 	ids: string[],
+	companyId: string,
 ) => Promise<
 	Array<{ id: string; name: string; type: string; company_id: string }>
 >;
@@ -65,7 +67,7 @@ export async function enrichAndFilter(
 
 	const ids = results.map((r) => r.id);
 	const lookup = opts.lookupNodes ?? defaultNodeLookup;
-	const nodeRows = await lookup(ids);
+	const nodeRows = await lookup(ids, companyId);
 	const byId = new Map(nodeRows.map((r) => [r.id, r]));
 
 	const out: RetrievedContext[] = [];
@@ -99,12 +101,12 @@ export async function enrichAndFilter(
  * Kept inline to avoid pulling Drizzle into the test path (tests inject
  * `lookupNodes`).
  */
-const defaultNodeLookup: NodeLookup = async (ids) => {
+const defaultNodeLookup: NodeLookup = async (ids, companyId) => {
 	if (ids.length === 0) return [];
 	const db = createDb();
 	const { nodes } = await import("@/db/schema");
 	const { eq, inArray } = await import("drizzle-orm");
-	const rows = await db
+	const rows = await withTenantTransaction(db, companyId, (tx) => tx
 		.select({
 			id: nodes.id,
 			name: nodes.name,
@@ -112,6 +114,6 @@ const defaultNodeLookup: NodeLookup = async (ids) => {
 			company_id: nodes.companyId,
 		})
 		.from(nodes)
-		.where(inArray(nodes.id, ids));
+		.where(inArray(nodes.id, ids)));
 	return rows.map((r) => ({ ...r, company_id: r.company_id }));
 };

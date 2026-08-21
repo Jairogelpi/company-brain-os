@@ -72,9 +72,9 @@ describe("Risk Engine", () => {
 
 			expect(risks).toHaveLength(1);
 			expect(risks[0].riskType).toBe("single_point_of_failure");
-			expect(risks[0].trigger).toBe("bus_factor=1 AND criticality=high AND documented=false");
+			expect(risks[0].trigger).toBe("bus_factor=1 AND criticality=high");
 			expect(risks[0].ruleId).toBe("knowledge-single-point-of-failure");
-			expect(risks[0].ruleVersion).toBe(1);
+			expect(risks[0].ruleVersion).toBe(2);
 			expect(risks[0].inputFacts).toMatchObject({
 			busFactor: 1,
 			criticality: "high",
@@ -114,6 +114,29 @@ describe("Risk Engine", () => {
 
 			expect(risks).toHaveLength(0);
 		});
+
+		it("keeps the dependency risk open when knowledge is documented but transfer is not verified", () => {
+			const risks = detectSinglePointOfFailure(
+				[pedro, documentedKnowledge],
+				[{ ...masteryPedro, toNodeId: documentedKnowledge.id }],
+			);
+
+			expect(risks).toHaveLength(1);
+			expect(risks[0].inputFacts.documented).toBe(true);
+		});
+
+		it("references canonical assertions when the projection carries provenance", () => {
+			const knowledge = {
+				...fillerKnowledge,
+				attributes: { provenance: { assertionIds: ["type"], predicates: { CRITICALITY: "criticality-a" } } },
+			};
+			const risk = detectSinglePointOfFailure(
+				[pedro, knowledge],
+				[{ ...masteryPedro, attributes: { level: 5, assertionId: "mastery-a" } }],
+			)[0];
+
+			expect(risk.evidenceRefs).toEqual(["assertion:mastery-a", "assertion:criticality-a"]);
+		});
 	});
 
 	describe("detectBusFactorZero", () => {
@@ -126,6 +149,15 @@ describe("Risk Engine", () => {
 			expect(risks).toHaveLength(1);
 			expect(risks[0].riskType).toBe("bus_factor_zero");
 			expect(risks[0].severity).toBe("critical");
+		});
+
+		it("falls back to all canonical node assertions when a predicate map is unavailable", () => {
+			const risk = detectBusFactorZero([{
+				...lostKnowledge,
+				attributes: { provenance: { assertionIds: ["type-a", "criticality-a"] } },
+			}], [])[0];
+
+			expect(risk.evidenceRefs).toEqual(["assertion:type-a", "assertion:criticality-a"]);
 		});
 	});
 
@@ -226,7 +258,10 @@ describe("Risk Engine", () => {
 
 			const report = detectAllRisks(
 				[pedro, laura, documentedKnowledge],
-				[secondExpert],
+				[
+					{ ...masteryPedro, id: "e-m-p-doc", toNodeId: documentedKnowledge.id },
+					secondExpert,
+				],
 			);
 
 			expect(report.risks).toHaveLength(0);

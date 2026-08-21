@@ -12,6 +12,11 @@ export type SignupBody = {
 };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export const PASSWORD_BCRYPT_ROUNDS = 12;
+
+export function isValidPassword(password: unknown): password is string {
+	return typeof password === "string" && password.length >= 12 && password.length <= 128;
+}
 
 function slugify(name: string): string {
 	return name
@@ -43,7 +48,7 @@ export function validateSignup(body: unknown): SignupValidationError | null {
 	const slug = typeof input.slug === "string" ? input.slug.trim() : "";
 
 	if (!EMAIL_RE.test(email)) return { field: "email" };
-	if (password.length < 8) return { field: "password" };
+	if (!isValidPassword(password)) return { field: "password" };
 	if (!companyName) return { field: "companyName" };
 	if (slug && !/^[a-z0-9](?:[a-z0-9-]{0,37}[a-z0-9])$/.test(slug)) {
 		return { field: "slug" };

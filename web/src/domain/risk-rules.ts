@@ -14,8 +14,8 @@ export type RiskRule = {
 
 const rules: Record<ContinuityRiskType, RiskRule> = {
 	single_point_of_failure: {
-		id: "knowledge-single-point-of-failure", version: 1,
-		condition: "bus_factor=1 AND criticality=high AND documented=false",
+		id: "knowledge-single-point-of-failure", version: 2,
+		condition: "bus_factor=1 AND criticality=high",
 		requiredEvidence: ["mastery_assertion", "criticality_assertion"],
 	},
 	bus_factor_zero: { id: "knowledge-lost", version: 1, condition: "bus_factor=0 AND criticality=high", requiredEvidence: ["criticality_assertion"] },

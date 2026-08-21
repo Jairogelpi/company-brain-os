@@ -34,11 +34,11 @@ const inputError: React.CSSProperties = {
 
 function Field({
 	label, id, type = "text", placeholder, autoComplete, value,
-	onChange, invalid,
+	onChange, invalid, minLength, maxLength, hint,
 }: {
 	label: string; id: string; type?: string; placeholder: string;
 	autoComplete?: string; value: string; onChange: (v: string) => void;
-	invalid?: boolean;
+	invalid?: boolean; minLength?: number; maxLength?: number; hint?: string;
 }) {
 	return (
 		<div>
@@ -53,10 +53,13 @@ function Field({
 				value={value}
 				onChange={(e) => onChange(e.target.value)}
 				aria-invalid={invalid}
+				minLength={minLength}
+				maxLength={maxLength}
 				style={{ ...inputBase, ...(invalid ? inputError : {}) }}
 				onFocus={(e) => { e.target.style.borderColor = "#1d1f23"; e.target.style.boxShadow = "0 0 0 4px rgba(20,22,26,0.08)"; }}
 				onBlur={(e) => { e.target.style.borderColor = invalid ? "#bb1532" : "#d7dade"; e.target.style.boxShadow = "0 1px 2px rgba(16,18,22,0.07)"; }}
 			/>
+			{hint && <p style={{ margin: "6px 0 0", fontSize: 12, color: "#6c727b" }}>{hint}</p>}
 		</div>
 	);
 }
@@ -143,7 +146,7 @@ export default function RegisterPage() {
 
 				<Field label={t.companyName} id="companyName" placeholder={t.companyPh} autoComplete="organization" value={companyName} onChange={setCompanyName} invalid={errorField === "companyName"} />
 
-				<Field label={t.password} id="password" type="password" placeholder={t.passPh} autoComplete="new-password" value={password} onChange={setPassword} invalid={errorField === "password"} />
+				<Field label={t.password} id="password" type="password" placeholder={t.passPh} autoComplete="new-password" value={password} onChange={setPassword} invalid={errorField === "password"} minLength={12} maxLength={128} hint={t.passMin} />
 
 				{error && (
 					<p style={{ fontSize: 13, color: "#bb1532", fontWeight: 500, margin: 0 }}>{error}</p>
