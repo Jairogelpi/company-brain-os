@@ -8,6 +8,7 @@ const orgA = `business-a-${suffix}`;
 const orgB = `business-b-${suffix}`;
 const role = `business_rls_${suffix}`;
 let admin: Client;
+let roleCreated = false;
 
 describe.skipIf(!databaseUrl)("business table RLS and tenant foreign keys", () => {
 	beforeAll(async () => {
@@ -24,6 +25,7 @@ describe.skipIf(!databaseUrl)("business table RLS and tenant foreign keys", () =
 		const embedding = `[${new Array(768).fill(0).join(",")}]`;
 		await admin.query("insert into node_embeddings (node_id, company_id, embedding) values ($1, $2, $3::vector), ($4, $5, $3::vector)", [`pedro-${suffix}`, orgA, embedding, `laura-${suffix}`, orgB]);
 		await admin.query(`create role ${role} login password 'rls-test-password'`);
+		roleCreated = true;
 		await admin.query(`grant usage on schema public to ${role}`);
 		await admin.query(`grant select, insert on nodes, edges, missions, ingestion_items, transcription_jobs, node_embeddings, notifications, user_profiles, user_invitations to ${role}`);
 	});
@@ -38,9 +40,11 @@ describe.skipIf(!databaseUrl)("business table RLS and tenant foreign keys", () =
 		await admin.query("delete from missions where id = $1", [`mission-${suffix}`]);
 		await admin.query("delete from nodes where id in ($1, $2)", [`pedro-${suffix}`, `laura-${suffix}`]);
 		await admin.query("delete from users where id in ($1, $2)", [`user-a-${suffix}`, `user-b-${suffix}`]);
-		await admin.query(`revoke all privileges on nodes, edges, missions, ingestion_items, transcription_jobs, node_embeddings, notifications, user_profiles, user_invitations from ${role}`);
-		await admin.query(`revoke usage on schema public from ${role}`);
-		await admin.query(`drop role if exists ${role}`);
+		if (roleCreated) {
+			await admin.query(`revoke all privileges on nodes, edges, missions, ingestion_items, transcription_jobs, node_embeddings, notifications, user_profiles, user_invitations from ${role}`);
+			await admin.query(`revoke usage on schema public from ${role}`);
+			await admin.query(`drop role if exists ${role}`);
+		}
 		await admin.query("delete from companies where id in ($1, $2)", [orgA, orgB]);
 		await admin.end();
 	});

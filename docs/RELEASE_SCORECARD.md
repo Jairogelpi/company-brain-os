@@ -6,7 +6,7 @@ This scorecard defines “10/10” as repository evidence for a production pilot
 | --- | --- | --- | --- |
 | Functionality | Capture → review → canonical claims → risks → mission → artifact → verified backup → recalculation works | Pedro/Laura E2E, mission API/UI, notification workflow | Pass |
 | Core coherence | One accepted v4 contract; atomic evidence-linked ledger is canonical; graph is disposable projection; no AI direct-write path | v4 spec, canonical writer/projection, aligned docs | Pass |
-| SaaS security | Forced RLS, non-owner runtime, tenant FKs/transactions, explicit User→Person identity, secure uploads, abuse controls, security headers | migrations 0015/0020–0026, integration suites, security model | Pass pending CI PostgreSQL gate |
+| SaaS security | Forced RLS, non-owner runtime, tenant FKs/transactions, explicit User→Person identity, secure uploads, abuse controls, security headers | migrations 0015/0020–0027, integration suites, security model | Pass pending CI PostgreSQL gate |
 | End-to-end evidence | False mitigation is prevented, assessor/reviewer identity is explicit and deterministic rebuild is proven | canonical E2E, transfer identity gates and critical coverage gate | Pass |
 | Portfolio | Problem, decisions, architecture, executable proof and responsible boundary are reviewable | README, case study, demo and this scorecard | Pass |
 | Commercial preparation | ICP, scoped offer, price experiment, scorecard, discovery/demo process and operating runbook exist | commercial pack and production runbook | Pass as sales-ready hypothesis |
