@@ -14,6 +14,7 @@ const env = {
 const gates = [
   ["Repository lint", "npm run lint"],
   ["Format policy", "npm run format:check"],
+  ["Canonical documentation audit", "npm run docs:audit"],
   ["Production migrations", "npm run db:migrate"],
   ["Explicit local/test seed", "npm run db:seed"],
   ["Full test suite", "npm test -- --run"],
@@ -55,7 +56,7 @@ for (const [name, command, extraEnv = {}] of gates) {
 
 console.log("\n========================================");
 console.log("REPOSITORY GATE: PASS");
-console.log("All repository-controlled local gates passed, including Chromium browser journeys.");
+console.log("All repository-controlled local gates passed, including canonical documentation and Chromium browser journeys.");
 console.log("CodeQL remains authoritative in GitHub Actions because it publishes SARIF into repository security analysis.");
 console.log("External customer, legal, restore-drill and independent security evidence remain separate validation gates.");
 console.log("========================================\n");
