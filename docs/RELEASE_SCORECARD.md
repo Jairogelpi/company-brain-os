@@ -1,38 +1,71 @@
 # Pilot release scorecard
 
-This scorecard defines “10/10” as repository evidence for a production pilot. It is not an external security certification, legal opinion or claim of product-market fit.
+This scorecard defines **10/10 repository readiness** as a reproducible, auditable production-pilot gate. It is not an external security certification, legal opinion, customer-success claim or proof of product-market fit.
 
 | Dimension | Definition of done | Evidence | Status |
 | --- | --- | --- | --- |
 | Functionality | Capture → review → canonical claims → risks → mission → artifact → verified backup → recalculation works | Pedro/Laura E2E, mission API/UI, notification workflow | Pass |
 | Core coherence | One accepted v4 contract; atomic evidence-linked ledger is canonical; graph is disposable projection; no AI direct-write path | v4 spec, canonical writer/projection, aligned docs | Pass |
-| SaaS security | Forced RLS, non-owner runtime, tenant FKs/transactions, explicit User→Person identity, secure uploads, abuse controls, security headers | migrations 0015/0020–0027, integration suites, security model | Pass pending CI PostgreSQL gate |
-| End-to-end evidence | False mitigation is prevented, assessor/reviewer identity is explicit and deterministic rebuild is proven | canonical E2E, transfer identity gates and critical coverage gate | Pass |
+| SaaS security | Forced RLS, non-owner runtime, tenant FKs/transactions, explicit User→Person identity, secure uploads, abuse controls, security headers | migrations 0015/0020–0027, PostgreSQL integration suite, security model | Pass |
+| End-to-end evidence | False mitigation is prevented, assessor/reviewer identity is explicit and deterministic rebuild is proven | canonical E2E, transfer identity gates, critical coverage gate | Pass |
+| Supply-chain hygiene | Reproducible npm install, production dependency audit, current CI/CD actions, SBOM and build provenance | CI, Dependabot, GHCR build workflow | Pass when this branch CI is green |
 | Portfolio | Problem, decisions, architecture, executable proof and responsible boundary are reviewable | README, case study, demo and this scorecard | Pass |
 | Commercial preparation | ICP, scoped offer, price experiment, scorecard, discovery/demo process and operating runbook exist | commercial pack and production runbook | Pass as sales-ready hypothesis |
 
-## Non-negotiable release gates
+## Non-negotiable repository gates
+
+The following must pass on the exact commit being merged or released:
 
 ```bash
 cd web
 npm ci
+npm run db:migrate
 npm run typecheck
 npm test -- --run
 npm run test:e2e
 npm run test:critical
 npm run build
 DATABASE_URL=<migrated-postgres> npx vitest --config test.integration.config.ts run
+npm audit --omit=dev --audit-level=high
 ```
 
-The final PostgreSQL integration line must be green in GitHub Actions before merge or deployment. A pilot also requires customer-specific security/legal review, a measured baseline and a named executive sponsor.
+GitHub Actions is the authoritative execution environment for the repository gate. Local success is useful evidence but does not replace a green remote run.
 
-## Evidence that cannot be manufactured in a repository
+## Release evidence chain
 
-- qualified buyer interviews;
-- paid-pilot conversion;
-- customer baseline and outcome measurements;
-- restore-time measurements in the target infrastructure;
-- counsel-approved DPA/order form;
-- independent penetration test or certification.
+A release candidate is considered repository-complete only when all of these are true:
 
-These are go-to-market/operational validation items, not reasons to mislabel synthetic tests as customer success.
+1. the exact commit has a green `Company Brain OS CI` run;
+2. migrations run against real PostgreSQL with pgvector;
+3. the canonical Pedro → Laura scenario passes;
+4. critical-domain coverage stays above its configured threshold;
+5. cross-tenant reads/writes fail under the non-superuser integration role;
+6. production dependency audit reports no high/critical vulnerability at release time;
+7. the production image is built by CI/CD with SBOM and provenance enabled;
+8. deployment follows `docs/operations/PRODUCTION_RUNBOOK.md` without demo seed data.
+
+A failed gate makes the release **not 10/10**, regardless of documentation or manual judgment.
+
+## External validation gates
+
+These cannot be truthfully manufactured in a repository. They are required before making the corresponding external claim:
+
+| Claim | Required external evidence |
+| --- | --- |
+| “Customers want this” | Qualified buyer interviews with recorded decision criteria |
+| “Customers will pay” | Signed/paid pilot or equivalent commercial commitment |
+| “It improves continuity” | Customer baseline plus post-pilot outcome measurement |
+| “Backups meet the target RTO/RPO” | Timed restore exercise in the target infrastructure |
+| “Legal/privacy terms are approved” | Counsel-approved DPA/order form for the deployment context |
+| “Independently security-tested” | External penetration test/certification report and remediation record |
+
+Until each item exists, the repository must describe it as **pending external validation**, never as completed.
+
+## Absolute 10/10 definition
+
+There are therefore two distinct scores:
+
+- **Repository 10/10:** every executable and documentary gate controlled by this repository is green and reproducible.
+- **Product/company 10/10:** repository 10/10 **plus** real buyer, customer, legal, operational and independent-security evidence.
+
+The project may claim the first when CI proves it. It may claim the second only when the external evidence actually exists.

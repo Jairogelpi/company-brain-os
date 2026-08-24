@@ -2,9 +2,10 @@ name: Company Brain OS CI
 
 on:
   push:
-    branches: [main, master, "feat/**"]
+    branches: [main, master, "feat/**", "hardening/**"]
   pull_request:
     branches: [main, master]
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -15,8 +16,9 @@ permissions:
 
 jobs:
   test:
+    name: Absolute release gate
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: web
@@ -37,28 +39,33 @@ jobs:
           --health-retries 5
 
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-node@v5
+      - name: Setup Node
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: web/package-lock.json
 
-      - run: npm ci
+      - name: Clean deterministic install
+        run: npm ci
 
-      - name: Run migrations
-        run: npx drizzle-kit migrate
+      - name: Run production migrations
+        run: npm run db:migrate
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/company_brain_os
 
-      - name: Seed
+      - name: Seed test tenant explicitly
         run: npm run db:seed
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/company_brain_os
           SEED_PASSWORD: ci-test-password
 
-      - name: Test
+      - name: Full test suite
         run: npm test -- --run
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/company_brain_os
@@ -66,18 +73,21 @@ jobs:
       - name: Canonical Pedro / Laura E2E
         run: npm run test:e2e
 
-      - name: Critical domain coverage
+      - name: Critical domain coverage gate
         run: npm run test:critical
 
-      - name: Test tenant isolation
+      - name: PostgreSQL tenant isolation gate
         run: npx vitest --config test.integration.config.ts run
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/company_brain_os
 
-      - name: Build
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Production build
         run: npm run build
         env:
           AUTH_SECRET: build-time-placeholder-secret-not-used-at-runtime
 
-      - name: Typecheck generated routes
-        run: npm run typecheck
+      - name: Dependency vulnerability gate
+        run: npm audit --omit=dev --audit-level=high
