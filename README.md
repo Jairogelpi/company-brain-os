@@ -3,6 +3,7 @@
 > Operational continuity intelligence: detect concentrated knowledge risk, transfer capability, and prove the dependency went down.
 
 [![CI](https://github.com/Jairogelpi/company-brain-os/actions/workflows/ci.yml/badge.svg)](https://github.com/Jairogelpi/company-brain-os/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/Jairogelpi/company-brain-os/actions/workflows/codeql.yml/badge.svg)](https://github.com/Jairogelpi/company-brain-os/actions/workflows/codeql.yml)
 [![Next.js](https://img.shields.io/badge/Next.js-16.3.2-black?logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.2-149ECA?logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript)](https://www.typescriptlang.org/)
@@ -11,7 +12,7 @@
 
 Company Brain OS maps critical knowledge, processes, systems and external relationships; derives explainable continuity risks; and turns each exposure into an evidence-backed mitigation mission. It is designed for organizations where operational knowledge is concentrated in a small number of people.
 
-**Start here:** [Product contract](docs/product/COMPANY_BRAIN_OS_V4.md) · [Canonical demo](docs/demo/PEDRO_LAURA.md) · [Architecture](docs/architecture/CANONICAL_LEDGER.md) · [Security](docs/security/SAAS_SECURITY.md) · [Installation](#installation-and-setup) · [Documentation map](docs/README.md)
+**Start here:** [Product contract](docs/product/COMPANY_BRAIN_OS_V4.md) · [Canonical demo](docs/demo/PEDRO_LAURA.md) · [Architecture](docs/architecture/CANONICAL_LEDGER.md) · [Security](docs/security/SAAS_SECURITY.md) · [Installation](#installation-and-setup) · [Documentation map](docs/README.md) · [v1.0.0-pilot notes](docs/releases/v1.0.0-pilot.md)
 
 ## Why it is different
 
@@ -78,6 +79,8 @@ npm run test:e2e
 
 Read the scenario and expected evidence in [docs/demo/PEDRO_LAURA.md](docs/demo/PEDRO_LAURA.md).
 
+The repository also runs real Chromium journeys with Playwright to verify the web boundary: anonymous protected-route redirect, credentials login through the real UI, and authenticated navigation across critical protected areas.
+
 ## What is implemented
 
 - Adaptive Spanish/English continuity capture with deterministic fallback when AI is unavailable.
@@ -107,6 +110,8 @@ The accepted product contract is [Company Brain OS v4](docs/product/COMPANY_BRAI
 | Upload security | Allow-list, signatures, ClamAV, hashes and safe disposition |
 | Async work | Separate worker with durable PostgreSQL jobs/outbox and bounded retries |
 | Delivery | Docker Compose, GitHub Actions and GHCR |
+| Browser evidence | Pinned Playwright + Chromium |
+| Static security | GitHub CodeQL for JavaScript/TypeScript |
 
 The graph is disposable. Rejected, expired, superseded and archived assertions cannot appear in it. See [Canonical Ledger Architecture](docs/architecture/CANONICAL_LEDGER.md).
 
@@ -455,7 +460,7 @@ Open `http://localhost:3000` and sign in using one of the demo accounts listed i
 
 ## Verify the repository locally
 
-With PostgreSQL available and the expected environment configured, reproduce the repository-controlled quality gate with:
+With PostgreSQL available and the expected environment configured, reproduce all locally executable repository gates with:
 
 ```bash
 cd web
@@ -463,29 +468,46 @@ npm ci
 npm run verify:all
 ```
 
-That command runs migrations, explicit demo/test seed, the full test suite, Pedro/Laura E2E, critical coverage, PostgreSQL tenant-isolation tests, TypeScript, the production build and the production dependency vulnerability gate.
+That command runs:
+
+1. repository lint policy
+2. formatting policy
+3. migrations and explicit demo/test seed
+4. full Vitest suite
+5. canonical Pedro/Laura E2E
+6. critical coverage
+7. PostgreSQL tenant-isolation tests
+8. strict TypeScript
+9. production build
+10. pinned Playwright Chromium installation
+11. real browser E2E journeys
+12. production dependency vulnerability audit
+
+CodeQL remains an authoritative GitHub-hosted gate because it publishes code-scanning results/SARIF in the repository.
 
 For individual gates:
 
 ```bash
+npm run lint
+npm run format:check
 npm test -- --run
 npm run test:e2e
 npm run test:critical
 npm run test:integration
 npm run typecheck
 npm run build
+npm run test:browser:install
+npm run test:browser
 npm audit --omit=dev --audit-level=high
 ```
 
-The permanent CI definition remains the source of truth: [.github/workflows/ci.yml](.github/workflows/ci.yml).
+The permanent CI and SAST definitions are the source of truth: [.github/workflows/ci.yml](.github/workflows/ci.yml) and [.github/workflows/codeql.yml](.github/workflows/codeql.yml).
 
 ## Troubleshooting setup
 
 ### Port 5432 is already in use
 
 Check whether PostgreSQL or another container is already using it.
-
-Docker:
 
 ```bash
 docker ps
@@ -500,6 +522,8 @@ Stop the process using port 3000, or run Next.js on another port:
 ```bash
 npm run dev -- -p 3001
 ```
+
+For browser E2E against a non-default port, set `PLAYWRIGHT_BASE_URL` accordingly.
 
 ### `company-brain-postgres` already exists
 
@@ -546,6 +570,17 @@ AUTH_SECRET
 APP_BASE_URL
 ```
 
+### Playwright cannot find Chromium
+
+Install the pinned browser build used by the repository:
+
+```bash
+cd web
+npm run test:browser:install
+```
+
+Linux CI uses Playwright's `--with-deps` installation path to install required system packages as well.
+
 ### Clean local demo database
 
 For the hybrid single-container path, deleting the container removes its database because no host volume is attached:
@@ -571,10 +606,14 @@ This repository deliberately separates engineering proof from external outcome c
 | Status | Evidence |
 | --- | --- |
 | Implemented | Ledger, deterministic graph, risk engine, missions, transfer verification, multi-tenancy, production stack |
-| Repository-verified | Automated tests, canonical E2E, critical coverage, PostgreSQL isolation, typecheck, production build, dependency audit |
+| Repository-verified | Lint/format policy, automated tests, canonical E2E, Playwright Chromium journeys, critical coverage, PostgreSQL isolation, typecheck, production build, dependency audit, CodeQL |
 | Requires external validation | Paid pilot, customer baseline/outcomes, timed restore drill, counsel-approved agreements, independent pentest/certification |
 
-Repository tests are evidence that the implementation behaves as specified. They are **not** evidence that a customer achieved a commercial outcome. See [Release Scorecard](docs/RELEASE_SCORECARD.md) and the open external-validation gate in the issue tracker.
+Repository tests and automated security analysis are evidence that the implementation behaves as specified and that repository-controlled gates are green. They are **not** evidence that a customer achieved a commercial outcome or that an independent security assessment has been completed. See [Release Scorecard](docs/RELEASE_SCORECARD.md) and the open external-validation gate in the issue tracker.
+
+## Release
+
+`v1.0.0-pilot` is the formal repository release for production-pilot evaluation. The release workflow creates the tag and GitHub Release idempotently from the exact accepted `master` SHA. See [release notes](docs/releases/v1.0.0-pilot.md) and [CHANGELOG.md](CHANGELOG.md).
 
 ## Documentation
 
@@ -586,11 +625,14 @@ The complete reading map is in [docs/README.md](docs/README.md). Key paths:
 - [SaaS security model](docs/security/SAAS_SECURITY.md)
 - [Production runbook](docs/operations/PRODUCTION_RUNBOOK.md)
 - [Release scorecard](docs/RELEASE_SCORECARD.md)
+- [v1.0.0-pilot notes](docs/releases/v1.0.0-pilot.md)
 - [Portfolio case study](docs/portfolio/CASE_STUDY.md)
 - [Pilot offer and measurement plan](docs/commercial/PILOT_OFFER.md)
 - [One-page offer and sales playbook](docs/commercial/ONE_PAGE.md)
 - [Contributing](CONTRIBUTING.md)
 - [Changelog](CHANGELOG.md)
+
+Historical planning material is explicitly non-canonical: see [`openspec/README.md`](openspec/README.md) and [`docs/superpowers/README.md`](docs/superpowers/README.md).
 
 ## Responsible product boundary
 
