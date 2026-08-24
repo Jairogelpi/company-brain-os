@@ -1,0 +1,62 @@
+name: Dependency remediation
+
+on:
+  push:
+    branches: ["hardening/absolute-10"]
+    paths:
+      - ".github/workflows/dependency-remediation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  remediate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: hardening/absolute-10
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install exact current tree
+        run: npm ci
+
+      - name: Apply available security remediations
+        run: npm audit fix --force
+
+      - name: Verify production audit
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Test
+        run: npm test -- --run
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+        env:
+          AUTH_SECRET: build-time-placeholder-secret-not-used-at-runtime
+
+      - name: Commit remediated dependency graph
+        run: |
+          if git diff --quiet -- package.json package-lock.json; then
+            echo "No dependency changes required"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "fix(deps): remediate production vulnerabilities"
+          git push origin HEAD:hardening/absolute-10
