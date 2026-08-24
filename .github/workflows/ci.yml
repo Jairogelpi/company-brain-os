@@ -60,6 +60,9 @@ jobs:
       - name: Format policy check
         run: npm run format:check
 
+      - name: Canonical documentation audit
+        run: npm run docs:audit
+
       - name: Run production migrations
         run: npm run db:migrate
         env:
