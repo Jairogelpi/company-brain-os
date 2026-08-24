@@ -12,6 +12,7 @@
     "test:e2e": "vitest run src/domain/canonical-pedro-laura.e2e.test.ts",
     "test:browser:install": "npm install --no-save --package-lock=false @playwright/test@1.62.1 && npx playwright install chromium",
     "test:browser": "npx playwright test --config=playwright.config.ts",
+    "typecheck:browser": "tsc --noEmit -p tsconfig.playwright.json",
     "test:critical": "vitest run --coverage --config vitest.critical.config.ts",
     "lint": "node scripts/lint.mjs",
     "format:check": "node scripts/format-check.mjs",
