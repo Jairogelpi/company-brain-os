@@ -16,7 +16,8 @@
     "db:push": "drizzle-kit push",
     "db:migrate": "tsx src/db/migrate.ts",
     "db:seed": "tsx src/db/seed.ts",
-    "test:integration": "cross-env TESTCONTAINERS=1 vitest --config test.integration.config.ts run"
+    "test:integration": "cross-env TESTCONTAINERS=1 vitest --config test.integration.config.ts run",
+    "verify:all": "node scripts/verify-all.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1116.0",
