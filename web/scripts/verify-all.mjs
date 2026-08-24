@@ -24,13 +24,14 @@ const gates = [
   ["TypeScript", "npm run typecheck"],
   ["Production build", "npm run build"],
   ["Pinned Playwright Chromium", "npm run test:browser:install"],
+  ["Browser harness typecheck", "npm run typecheck:browser"],
   ["Browser E2E", "npm run test:browser"],
   ["Production dependency audit", "npm audit --omit=dev --audit-level=high"],
 ];
 
 console.log("\nCompany Brain OS — local repository verification");
 console.log(`Database: ${databaseUrl.replace(/:[^:@/]+@/, ":***@")}`);
-console.log("Prerequisite: run `npm ci` before this command. Browser verification downloads pinned Chromium on first use.\n");
+console.log("Prerequisite: run `npm ci` before this command. Browser verification installs the pinned Playwright harness and Chromium on first use.\n");
 
 for (const [name, command, extraEnv = {}] of gates) {
   console.log(`\n=== ${name} ===`);
