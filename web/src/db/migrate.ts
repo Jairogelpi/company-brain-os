@@ -21,6 +21,31 @@ const DATABASE_URL =
 			})()
 		: "postgres://postgres:postgres@localhost:5432/company_brain_os");
 
+function formatErrorChain(error: unknown): string {
+	const lines: string[] = [];
+	const seen = new Set<unknown>();
+	let current: unknown = error;
+	let depth = 0;
+
+	while (current && !seen.has(current) && depth < 8) {
+		seen.add(current);
+		if (current instanceof Error) {
+			lines.push(`${depth === 0 ? "error" : `cause[${depth}]`}: ${current.name}: ${current.message}`);
+			const withCode = current as Error & { code?: string; detail?: string; hint?: string; cause?: unknown };
+			if (withCode.code) lines.push(`  code: ${withCode.code}`);
+			if (withCode.detail) lines.push(`  detail: ${withCode.detail}`);
+			if (withCode.hint) lines.push(`  hint: ${withCode.hint}`);
+			current = withCode.cause;
+		} else {
+			lines.push(`${depth === 0 ? "error" : `cause[${depth}]`}: ${String(current)}`);
+			break;
+		}
+		depth += 1;
+	}
+
+	return lines.join("\n");
+}
+
 export async function runMigrations() {
 	const pool = new Pool({ connectionString: DATABASE_URL, max: 1 });
 	const db = drizzle(pool);
@@ -34,7 +59,7 @@ export async function runMigrations() {
 		await canonicalizeLegacyGraphNodes(db);
 		console.log("Migrations complete.");
 	} catch (error) {
-		console.error("Migration failed:", (error as Error).message);
+		console.error("Migration failed:\n" + formatErrorChain(error));
 		throw error;
 	} finally {
 		await pool.end();
