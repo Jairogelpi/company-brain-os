@@ -54,6 +54,12 @@ jobs:
       - name: Clean deterministic install
         run: npm ci
 
+      - name: Repository lint
+        run: npm run lint
+
+      - name: Format policy check
+        run: npm run format:check
+
       - name: Run production migrations
         run: npm run db:migrate
         env:
@@ -91,3 +97,65 @@ jobs:
 
       - name: Dependency vulnerability gate
         run: npm audit --omit=dev --audit-level=high
+
+  browser:
+    name: Browser E2E (Chromium)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: web
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: company_brain_os
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Clean deterministic install
+        run: npm ci
+
+      - name: Migrate browser-test database
+        run: npm run db:migrate
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/company_brain_os
+
+      - name: Seed browser-test owner
+        run: npm run db:seed
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/company_brain_os
+          SEED_PASSWORD: ci-test-password
+
+      - name: Install pinned Playwright Chromium
+        run: npx --yes @playwright/test@1.62.1 install --with-deps chromium
+
+      - name: Run browser journeys
+        run: npm run test:browser
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/company_brain_os
+          AUTH_SECRET: browser-e2e-secret
+          AUTH_TRUST_HOST: "true"
+          SEED_PASSWORD: ci-test-password
+          E2E_PASSWORD: ci-test-password
