@@ -7,15 +7,18 @@ This scorecard defines **10/10 repository readiness** as a reproducible, auditab
 | Functionality | Capture → review → canonical claims → risks → mission → artifact → verified backup → recalculation works | Pedro/Laura E2E, mission API/UI, notification workflow | Pass |
 | Core coherence | One accepted v4 contract; atomic evidence-linked ledger is canonical; graph is disposable projection; no AI direct-write path | v4 spec, canonical writer/projection, aligned docs | Pass |
 | SaaS security | Forced RLS, non-owner runtime, tenant FKs/transactions, explicit User→Person identity, secure uploads, abuse controls, security headers | migrations 0015/0020–0027, PostgreSQL integration suite, security model | Pass |
-| End-to-end evidence | False mitigation is prevented, assessor/reviewer identity is explicit and deterministic rebuild is proven | canonical E2E, transfer identity gates, critical coverage gate | Pass |
+| End-to-end evidence | False mitigation is prevented, assessor/reviewer identity is explicit, deterministic rebuild is proven and the browser boundary is exercised | canonical E2E, Playwright Chromium journeys, transfer identity gates, critical coverage gate | Pass when exact-commit CI is green |
+| Static quality | No forbidden TypeScript suppression, debugger statements or unresolved executable-code TODO/FIXME/HACK markers; source formatting policy is enforced | `npm run lint`, `npm run format:check` | Pass when exact-commit CI is green |
+| Application security analysis | JavaScript/TypeScript is scanned by CodeQL on PRs, master and weekly | `.github/workflows/codeql.yml`, GitHub code scanning | Pass when exact-commit CodeQL is green |
 | Supply-chain hygiene | Reproducible npm install, production dependency audit, current CI/CD actions, SBOM and build provenance | CI, Dependabot, GHCR build workflow | Pass when exact-commit CI is green |
-| Documentation | Public README, canonical docs map, release evidence boundary and contribution path match the executable repository | README, docs index, contributing guide, changelog | Pass when exact-commit CI is green |
+| Documentation | Public README, canonical docs map, release evidence boundary and contribution path match the executable repository; historical plans are clearly non-canonical | README, docs index, contributing guide, changelog, archive markers | Pass when exact-commit CI is green |
+| Release engineering | Formal pilot notes exist and `v1.0.0-pilot` is created idempotently from the exact master SHA | release notes, release workflow, GitHub Release | Pass when release workflow succeeds |
 | Portfolio | Problem, decisions, architecture, executable proof and responsible boundary are reviewable | README, case study, demo and this scorecard | Pass |
 | Commercial preparation | ICP, scoped offer, price experiment, scorecard, discovery/demo process and operating runbook exist | commercial pack and production runbook | Pass as sales-ready hypothesis |
 
 ## Non-negotiable repository gates
 
-The authoritative implementation is [`.github/workflows/ci.yml`](../.github/workflows/ci.yml). On a clean local checkout, install the locked graph and run the local mirror:
+The authoritative implementation is [`.github/workflows/ci.yml`](../.github/workflows/ci.yml), complemented by [CodeQL](../.github/workflows/codeql.yml). On a clean local checkout, install the locked graph and run the local mirror:
 
 ```bash
 cd web
@@ -25,19 +28,27 @@ npm run verify:all
 
 `verify:all` executes:
 
-1. production migrations
-2. explicit local/test seed
-3. full automated test suite
-4. canonical Pedro → Laura E2E
-5. critical-domain coverage
-6. PostgreSQL tenant isolation
-7. strict TypeScript
-8. production build
-9. production dependency vulnerability audit
+1. repository lint policy
+2. formatting policy
+3. production migrations
+4. explicit local/test seed
+5. full automated test suite
+6. canonical Pedro → Laura E2E
+7. critical-domain coverage
+8. PostgreSQL tenant isolation
+9. strict TypeScript
+10. production build
+11. pinned Playwright Chromium installation
+12. Playwright browser E2E
+13. production dependency vulnerability audit
+
+CodeQL is intentionally not reproduced by `verify:all`; the authoritative scan runs in GitHub Actions and publishes SARIF/code-scanning results there.
 
 Equivalent individual commands are:
 
 ```bash
+npm run lint
+npm run format:check
 npm run db:migrate
 npm run db:seed
 npm test -- --run
@@ -46,24 +57,30 @@ npm run test:critical
 DATABASE_URL=<migrated-postgres> npx vitest --config test.integration.config.ts run
 npm run typecheck
 AUTH_SECRET=<build-secret> npm run build
+npm run test:browser:install
+npm run test:browser
 npm audit --omit=dev --audit-level=high
 ```
 
-GitHub Actions is the authoritative execution environment for the repository gate. Local success is useful reproducibility evidence but does not replace a green remote run on the exact commit.
+GitHub Actions is the authoritative execution environment for repository and SAST gates. Local success is useful reproducibility evidence but does not replace green remote runs on the exact commit.
 
 ## Release evidence chain
 
 A release candidate is repository-complete only when all of these are true:
 
 1. the exact commit has a green `Company Brain OS CI` run;
-2. migrations run against real PostgreSQL with pgvector;
-3. seed data is created only through the explicit test/demo step, never implicitly in production;
-4. the canonical Pedro → Laura scenario passes;
-5. critical-domain coverage stays above its configured threshold;
-6. cross-tenant reads/writes fail under the non-superuser integration role;
-7. production dependency audit reports no high/critical vulnerability at release time;
-8. the production image is built by CI/CD with SBOM and provenance enabled;
-9. deployment follows `docs/operations/PRODUCTION_RUNBOOK.md` without demo seed data.
+2. repository lint and formatting-policy checks pass;
+3. migrations run against real PostgreSQL with pgvector;
+4. seed data is created only through the explicit test/demo step, never implicitly in production;
+5. the canonical Pedro → Laura scenario passes;
+6. critical-domain coverage stays above its configured threshold;
+7. cross-tenant reads/writes fail under the non-superuser integration role;
+8. Playwright Chromium verifies authentication and critical protected navigation;
+9. CodeQL completes successfully for JavaScript/TypeScript;
+10. production dependency audit reports no high/critical vulnerability at release time;
+11. the production image is built by CI/CD with SBOM and provenance enabled;
+12. deployment follows `docs/operations/PRODUCTION_RUNBOOK.md` without demo seed data;
+13. the formal release tag/notes point at the exact accepted master SHA.
 
 A failed gate makes the release **not 10/10**, regardless of documentation or manual judgment.
 
@@ -86,7 +103,7 @@ Until each item exists, the repository must describe it as **pending external va
 
 There are therefore two distinct scores:
 
-- **Repository 10/10:** every executable and documentary gate controlled by this repository is green and reproducible.
+- **Repository 10/10:** every executable, security-analysis, release and documentary gate controlled by this repository is green and reproducible.
 - **Product/company 10/10:** repository 10/10 **plus** real buyer, customer, legal, operational and independent-security evidence.
 
-The project may claim the first when CI proves it. It may claim the second only when the external evidence actually exists.
+The project may claim the first when CI, CodeQL and formal release evidence prove it. It may claim the second only when the external evidence actually exists.
