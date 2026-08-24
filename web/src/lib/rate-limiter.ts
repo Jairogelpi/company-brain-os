@@ -65,37 +65,31 @@ export async function checkDistributedRateLimit(
 	if (!key || rate <= 0 || capacity <= 0) throw new Error("Invalid rate limit configuration");
 	const keyHash = createHash("sha256").update(key).digest("hex");
 	return db.transaction(async (tx) => {
+		// A single INSERT ... ON CONFLICT DO UPDATE, not separate INSERT/UPDATE
+		// CTEs targeting the same table: Postgres does not guarantee a later
+		// data-modifying CTE observes a row written by an earlier one in the
+		// same statement, so the previous two-CTE version silently returned
+		// zero rows on every call (both first-ever and steady-state), which
+		// surfaced as signup being permanently unavailable.
 		const result = await tx.execute(sql<{
 			allowed: boolean;
 			remaining: number;
 			retry_after: number;
 		}>`
-			WITH current_bucket AS (
-				INSERT INTO rate_limit_buckets (key_hash, tokens, last_refill, expires_at)
-				VALUES (${keyHash}, ${capacity}, clock_timestamp(), clock_timestamp() + interval '1 day')
-				ON CONFLICT (key_hash) DO UPDATE SET key_hash = EXCLUDED.key_hash
-				RETURNING tokens, last_refill
-			), refill AS (
-				SELECT LEAST(
+			INSERT INTO rate_limit_buckets AS b (key_hash, tokens, last_refill, expires_at)
+			VALUES (${keyHash}, ${capacity} - 1.0, clock_timestamp(), clock_timestamp() + interval '1 day')
+			ON CONFLICT (key_hash) DO UPDATE SET
+				tokens = LEAST(
 					${capacity}::double precision,
-					tokens + EXTRACT(EPOCH FROM (clock_timestamp() - last_refill)) * (${rate}::double precision / 60.0)
-				) AS available
-				FROM current_bucket
-			), updated AS (
-				UPDATE rate_limit_buckets
-				SET tokens = GREATEST(refill.available - 1.0, 0.0),
-					last_refill = clock_timestamp(),
-					expires_at = clock_timestamp() + interval '1 day'
-				FROM refill
-				WHERE key_hash = ${keyHash}
-				RETURNING refill.available
-			)
-			SELECT
-				(available >= 1.0) AS allowed,
-				FLOOR(GREATEST(available - 1.0, 0.0))::int AS remaining,
-				CASE WHEN available >= 1.0 THEN 0
-				ELSE CEIL((1.0 - available) / (${rate}::double precision / 60.0))::int END AS retry_after
-			FROM updated
+					b.tokens + EXTRACT(EPOCH FROM (clock_timestamp() - b.last_refill)) * (${rate}::double precision / 60.0)
+				) - 1.0,
+				last_refill = clock_timestamp(),
+				expires_at = clock_timestamp() + interval '1 day'
+			RETURNING
+				(tokens >= 0.0) AS allowed,
+				FLOOR(GREATEST(tokens, 0.0))::int AS remaining,
+				CASE WHEN tokens >= 0.0 THEN 0
+				ELSE CEIL((0.0 - tokens) / (${rate}::double precision / 60.0))::int END AS retry_after
 		`);
 		await tx.execute(sql`
 			DELETE FROM rate_limit_buckets

@@ -22,6 +22,7 @@
     "db:push": "drizzle-kit push",
     "db:migrate": "tsx src/db/migrate.ts",
     "db:seed": "tsx src/db/seed.ts",
+    "setup:hybrid": "node scripts/setup-hybrid.mjs",
     "test:integration": "cross-env TESTCONTAINERS=1 vitest --config test.integration.config.ts run",
     "verify:all": "node scripts/verify-all.mjs"
   },

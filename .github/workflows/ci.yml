@@ -151,9 +151,6 @@ jobs:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/company_brain_os
           SEED_PASSWORD: ci-test-password
 
-      - name: Install pinned Playwright harness
-        run: npm install --no-save --package-lock=false @playwright/test@1.62.1
-
       - name: Typecheck browser harness
         run: npm run typecheck:browser
 
