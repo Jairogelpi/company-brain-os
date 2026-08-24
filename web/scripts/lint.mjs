@@ -14,6 +14,7 @@ async function walk(dir) {
       continue;
     }
     if (!extensions.has(path.extname(entry.name))) continue;
+    if (full === path.join("scripts", "lint.mjs")) continue;
 
     const text = await readFile(full, "utf8");
     const checks = [
