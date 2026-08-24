@@ -15,6 +15,7 @@
     "test:critical": "vitest run --coverage --config vitest.critical.config.ts",
     "lint": "node scripts/lint.mjs",
     "format:check": "node scripts/format-check.mjs",
+    "docs:audit": "node scripts/docs-audit.mjs",
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
