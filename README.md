@@ -29,18 +29,37 @@ Company Brain OS does not treat a document as proof that a dependency has been r
 
 ## Product loop
 
-```mermaid
-flowchart TD
-    A["Interview or import"] --> B["Human review"]
-    B --> C["Approved assertion ledger"]
-    C --> D["Deterministic graph projection"]
-    D --> E["Explainable risk"]
-    E --> F["Mitigation mission"]
-    F --> G["Capture and validate artifact"]
-    G --> H["Assess competency, access and evidence"]
-    H --> I["Independent approval"]
-    I --> C
+```text
+Interview / import
+       |
+       v
+Human review
+       |
+       v
+Approved assertion ledger
+       |
+       v
+Deterministic graph projection
+       |
+       v
+Explainable risk
+       |
+       v
+Mitigation mission
+       |
+       v
+Capture + validate artifact
+       |
+       v
+Assess competency + access + evidence
+       |
+       v
+Independent approval
+       |
+       +-------------------------------> Approved assertion ledger
 ```
+
+The ledger is canonical; the graph is a rebuildable read model. Human approval is required before proposed facts become canonical truth.
 
 ## Canonical executable proof: Pedro → Laura
 
