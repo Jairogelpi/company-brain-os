@@ -1,6 +1,7 @@
-# Local Pi runtime state
+# Local agent/tool runtime state
 .atl/
-.pi/agent/sessions/
+.pi/
+.mimocode/
 .worktrees/
 
 # Node / Next.js
@@ -8,6 +9,8 @@ node_modules/
 .next/
 out/
 coverage/
+playwright-report/
+test-results/
 *.tsbuildinfo
 
 # Local env files
