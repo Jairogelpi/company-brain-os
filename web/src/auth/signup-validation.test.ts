@@ -3,7 +3,7 @@ import { validateSignup } from "./signup-validation";
 
 const validBody = {
 	email: "owner@example.com",
-	password: "password123",
+	password: "correct-horse-battery",
 	companyName: "Acme Corp",
 	slug: "acme-corp",
 };
@@ -16,6 +16,7 @@ describe("validateSignup", () => {
 	it.each([
 		["email", { ...validBody, email: "not-an-email" }],
 		["password", { ...validBody, password: "1234567" }],
+		["password", { ...validBody, password: "x".repeat(129) }],
 		["companyName", { ...validBody, companyName: "   " }],
 		["slug", { ...validBody, slug: "Acme Co!" }],
 		["slug", { ...validBody, slug: "-acme" }],

@@ -6,13 +6,14 @@ import { getGeminiConfig } from "@/ai/gemini";
 import { extractGraphProposals, type ExistingNode } from "@/ai/gemini-extract";
 import type { GraphOperationProposal } from "@/domain/interview";
 import type { NodeType } from "@/domain/graph";
+import { savePending } from "@/server/ingestion";
 
 /**
  * POST /api/graph/build — the AI build assistant.
  *
  * Body: { message: string }. Turns a natural-language description into graph
  * proposals (deterministic interview engine, works without an LLM key) and
- * applies them to the company graph, returning a human summary of what changed.
+ * queues them for human review. AI output never writes canonical truth.
  * Requires contributor+ (graph.node.create).
  */
 export async function POST(request: Request) {
@@ -74,16 +75,13 @@ export async function POST(request: Request) {
 	}
 
 	try {
-		const events = await service.applyConfirmedProposals(proposals);
-		const added = {
-			nodes: events.filter((e) => e.eventType === "graph.node.created").length,
-			edges: events.filter((e) => e.eventType === "graph.edge.created").length,
-		};
-		const reply =
-			added.nodes + added.edges === 0
-				? "Everything you mentioned is already in the graph."
-				: `Added ${added.nodes} node${added.nodes === 1 ? "" : "s"} and ${added.edges} relationship${added.edges === 1 ? "" : "s"}.`;
-		return NextResponse.json({ applied: events.length, added, summary, reply });
+		const items = await savePending(user.companyId, "ai-build", "text", proposals);
+		return NextResponse.json({
+			applied: 0,
+			queued: items.length,
+			summary,
+			reply: `Prepared ${items.length} proposal${items.length === 1 ? "" : "s"} for human review in Inbox.`,
+		});
 	} catch (err) {
 		return NextResponse.json({ error: (err as Error).message }, { status: 400 });
 	}

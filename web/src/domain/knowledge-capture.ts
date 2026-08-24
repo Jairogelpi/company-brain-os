@@ -1,7 +1,13 @@
 import type { GraphNode, KnowledgeNode } from "./graph";
 import type { GraphService } from "./graph-service";
-import type { Mission, Contribution, Artifact, ArtifactType } from "./missions";
-import { transitionMission } from "./missions";
+import type {
+	Mission,
+	Contribution,
+	Artifact,
+	ArtifactType,
+	TransferVerification,
+} from "./missions";
+import { completeMission, transitionMission } from "./missions";
 import { computeAllMetrics } from "./metrics";
 import { detectAllRisks, type RiskReport } from "./risk-engine";
 
@@ -197,23 +203,21 @@ export interface ClosedLoopResult {
 
 /**
  * Complete the mission-to-risk loop:
- * 1. Close the mission
- * 2. Update the target knowledge node (documented=true, validation_state=validated)
- * 3. Recalculate risks and metrics
+ * 1. Validate the content submission
+ * 2. Record documentation and a verified backup competency edge
+ * 3. Close only with independent transfer evidence
+ * 4. Recalculate risks and metrics
  *
  * Uses the GraphService to apply node updates.
  */
 export function closeMissionLoop(
 	service: GraphService,
 	mission: Mission,
+	verification: TransferVerification,
 ): ClosedLoopResult {
-	// 1. Close the mission (domain only — service integration is caller's responsibility)
-	const closedMission = transitionMission(
-		transitionMission(
-			transitionMission(transitionMission(mission, "in_progress"), "submitted"),
-			"validated",
-		),
-		"closed",
+	const validatedMission = transitionMission(
+		transitionMission(transitionMission(mission, "in_progress"), "submitted"),
+		"validated",
 	);
 
 	// 2. Update the knowledge node — mark as documented and validated
@@ -228,6 +232,20 @@ export function closeMissionLoop(
 		// Node might not exist in this service instance — that's OK
 	}
 
+	service.createEdge({
+		id: `transfer-${verification.id}`,
+		type: "MASTERS",
+		fromNodeId: verification.backupPersonId,
+		toNodeId: mission.targetNodeId,
+		attributes: {
+			level: verification.competencyLevel,
+			accessVerified: verification.accessVerified,
+			transferVerificationId: verification.id,
+			evidenceRefs: verification.evidenceRefs,
+		},
+	});
+	completeMission(validatedMission, verification);
+
 	// 3. Recalculate risks and metrics
 	const nodes = service.listNodes();
 	const edges = service.listEdges();
@@ -240,9 +258,9 @@ export function closeMissionLoop(
 
 	return {
 		updatedNodes,
-		updatedEdges: 0,
+		updatedEdges: 1,
 		newRiskReport,
 		newMetrics,
-		message: `Mission "${mission.objective}" closed. Node "${mission.targetNodeName}" marked as documented & validated. ${newRiskReport.summary.total} risks remaining. Health: ${newMetrics.health.overallScore}/100.`,
+		message: `Mission "${mission.objective}" closed after verified transfer. Node "${mission.targetNodeName}" is documented and backed up by ${verification.backupPersonId}. ${newRiskReport.summary.total} risks remaining. Health: ${newMetrics.health.overallScore}/100.`,
 	};
 }

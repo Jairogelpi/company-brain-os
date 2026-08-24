@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextResponse } from "next/server";
+import { tenantStorageKey } from "@/lib/upload-security";
 
 const requireApiUserMock = vi.fn();
 const sizeMock = vi.fn();
@@ -111,7 +112,7 @@ describe("POST /api/transcribe", () => {
 			companyId: "companyA",
 			userId: "user-1",
 			source: "interview.mp3",
-			storageKey: filename,
+			storageKey: tenantStorageKey("companyA", filename),
 			mimeType: "audio/mpeg",
 		});
 	});

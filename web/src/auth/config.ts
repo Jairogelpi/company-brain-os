@@ -23,8 +23,7 @@ export const authConfig = {
 			if (user) {
 				token.id = user.id as string;
 				token.role = (user as { role?: UserRole }).role ?? "viewer";
-				token.companyId =
-					(user as { companyId?: string }).companyId ?? "demo-corp";
+				token.companyId = (user as { companyId?: string }).companyId;
 				token.validationDomains =
 					(user as { validationDomains?: string[] }).validationDomains ?? [];
 			}
@@ -35,7 +34,9 @@ export const authConfig = {
 			if (session.user) {
 				session.user.id = (token.id as string) ?? session.user.id;
 				session.user.role = (token.role as UserRole) ?? "viewer";
-				session.user.companyId = (token.companyId as string) ?? "demo-corp";
+				if (typeof token.companyId === "string") {
+					session.user.companyId = token.companyId;
+				}
 				session.user.validationDomains =
 					(token.validationDomains as string[]) ?? [];
 			}
@@ -49,11 +50,12 @@ export const authConfig = {
 			const isPublic =
 				pathname === "/login" ||
 				pathname === "/register" ||
+				pathname === "/accept-invite" ||
 				pathname.startsWith("/api/") ||
 				pathname.startsWith("/_next") ||
 				pathname === "/favicon.ico";
 			if (isPublic) return true;
-			return !!auth?.user;
+			return !!auth?.user?.companyId;
 		},
 	},
 	providers: [], // real providers are added in nextauth.ts

@@ -2,6 +2,8 @@ import type { NodeType } from "@/domain/graph";
 import type { Db } from "./index";
 import { nodes, edges, eventLog } from "./schema";
 import { and, eq } from "drizzle-orm";
+import { requireOrganizationId } from "@/auth/organization-context";
+import { withTenantTransaction } from "./tenant-transaction";
 
 // --- Domain types (subset used by repository) ---
 
@@ -55,7 +57,7 @@ export interface GraphRepository {
 function nodeToRow(node: RepoNode) {
 	return {
 		id: node.id,
-		companyId: (node.companyId as string) ?? "default",
+		companyId: requireOrganizationId(node.companyId as string),
 		type: node.type as NodeType,
 		name: node.name,
 		criticality:
@@ -99,7 +101,7 @@ function rowToNode(row: typeof nodes.$inferSelect): RepoNode {
 function edgeToRow(edge: RepoEdge) {
 	return {
 		id: edge.id,
-		companyId: (edge.companyId as string) ?? "default",
+		companyId: requireOrganizationId(edge.companyId),
 		type: edge.type as never,
 		fromNodeId: edge.fromNodeId,
 		toNodeId: edge.toNodeId,
@@ -120,7 +122,7 @@ function rowToEdge(row: typeof edges.$inferSelect): RepoEdge {
 function eventToRow(event: RepoEvent) {
 	return {
 		id: event.id,
-		companyId: event.companyId ?? "default",
+		companyId: requireOrganizationId(event.companyId),
 		actorId: event.actorId ?? null,
 		eventType: event.eventType,
 		payload: event.payload,
@@ -146,26 +148,26 @@ function rowToEvent(row: typeof eventLog.$inferSelect): RepoEvent {
  */
 export function createDrizzleGraphRepository(
 	db: Db,
-	companyId?: string,
+	companyId: string,
 ): GraphRepository {
+	const tenantId = requireOrganizationId(companyId);
 	const scopeNode = (extra: ReturnType<typeof eq>) =>
-		companyId ? and(extra, eq(nodes.companyId, companyId)) : extra;
+		and(extra, eq(nodes.companyId, tenantId));
 	const scopeEdge = (extra: ReturnType<typeof eq>) =>
-		companyId ? and(extra, eq(edges.companyId, companyId)) : extra;
+		and(extra, eq(edges.companyId, tenantId));
 	const withCompany = <T extends object>(row: T): T =>
-		companyId ? ({ ...row, companyId } as T) : row;
+		({ ...row, companyId: tenantId } as T);
 
 	return {
 		async createNode(node) {
-			await db.insert(nodes).values(nodeToRow(withCompany(node)));
+			await withTenantTransaction(db, tenantId, (tx) =>
+				tx.insert(nodes).values(nodeToRow(withCompany(node))),
+			);
 		},
 
 		async readNode(id) {
-			const rows = await db
-				.select()
-				.from(nodes)
-				.where(scopeNode(eq(nodes.id, id)))
-				.limit(1);
+			const rows = await withTenantTransaction(db, tenantId, (tx) => tx
+				.select().from(nodes).where(scopeNode(eq(nodes.id, id))).limit(1));
 			return rows[0] ? rowToNode(rows[0]) : undefined;
 		},
 
@@ -183,31 +185,32 @@ export function createDrizzleGraphRepository(
 				set.validationState = patch.validationState as never;
 			if (patch.confidence !== undefined) set.confidence = patch.confidence;
 			if (Object.keys(set).length === 0) return;
-			await db.update(nodes).set(set).where(scopeNode(eq(nodes.id, id)));
+			await withTenantTransaction(db, tenantId, (tx) =>
+				tx.update(nodes).set(set).where(scopeNode(eq(nodes.id, id))),
+			);
 		},
 
 		async deleteNode(id) {
-			await db.delete(nodes).where(scopeNode(eq(nodes.id, id)));
+			await withTenantTransaction(db, tenantId, (tx) =>
+				tx.delete(nodes).where(scopeNode(eq(nodes.id, id))),
+			);
 		},
 
 		async listNodes() {
-			const rows = await db
-				.select()
-				.from(nodes)
-				.where(scopeNode(eq(nodes.archived, false)));
+			const rows = await withTenantTransaction(db, tenantId, (tx) => tx
+				.select().from(nodes).where(scopeNode(eq(nodes.archived, false))));
 			return rows.map(rowToNode);
 		},
 
 		async createEdge(edge) {
-			await db.insert(edges).values(edgeToRow(withCompany(edge)));
+			await withTenantTransaction(db, tenantId, (tx) =>
+				tx.insert(edges).values(edgeToRow(withCompany(edge))),
+			);
 		},
 
 		async readEdge(id) {
-			const rows = await db
-				.select()
-				.from(edges)
-				.where(scopeEdge(eq(edges.id, id)))
-				.limit(1);
+			const rows = await withTenantTransaction(db, tenantId, (tx) => tx
+				.select().from(edges).where(scopeEdge(eq(edges.id, id))).limit(1));
 			return rows[0] ? rowToEdge(rows[0]) : undefined;
 		},
 
@@ -215,33 +218,32 @@ export function createDrizzleGraphRepository(
 			const set: Record<string, unknown> = {};
 			if (patch.attributes) set.attributes = patch.attributes;
 			if (Object.keys(set).length === 0) return;
-			await db.update(edges).set(set).where(scopeEdge(eq(edges.id, id)));
+			await withTenantTransaction(db, tenantId, (tx) =>
+				tx.update(edges).set(set).where(scopeEdge(eq(edges.id, id))),
+			);
 		},
 
 		async deleteEdge(id) {
-			await db.delete(edges).where(scopeEdge(eq(edges.id, id)));
+			await withTenantTransaction(db, tenantId, (tx) =>
+				tx.delete(edges).where(scopeEdge(eq(edges.id, id))),
+			);
 		},
 
 		async listEdges() {
-			const rows = await db
-				.select()
-				.from(edges)
-				.where(scopeEdge(eq(edges.archived, false)));
+			const rows = await withTenantTransaction(db, tenantId, (tx) => tx
+				.select().from(edges).where(scopeEdge(eq(edges.archived, false))));
 			return rows.map(rowToEdge);
 		},
 
 		async saveEvent(event) {
-			await db.insert(eventLog).values(eventToRow(withCompany(event)));
+			await withTenantTransaction(db, tenantId, (tx) =>
+				tx.insert(eventLog).values(eventToRow(withCompany(event))),
+			);
 		},
 
 		async listEvents() {
-			const rows = await db
-				.select()
-				.from(eventLog)
-				.where(
-					companyId ? eq(eventLog.companyId, companyId) : undefined,
-				)
-				.orderBy(eventLog.createdAt);
+			const rows = await withTenantTransaction(db, tenantId, (tx) => tx
+				.select().from(eventLog).where(eq(eventLog.companyId, tenantId)).orderBy(eventLog.createdAt));
 			return rows.map(rowToEvent);
 		},
 	};

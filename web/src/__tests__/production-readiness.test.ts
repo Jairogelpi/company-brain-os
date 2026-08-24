@@ -1,11 +1,6 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import { checkRateLimit, resetRateLimits } from "@/lib/rate-limiter";
-import {
-	sendNotification,
-	notifyMissionAssigned,
-	getNotifications,
-	clearNotifications,
-} from "@/lib/notifications";
+import { missionAssignmentNotifications } from "@/lib/notifications";
 import {
 	createCompany,
 	getCompany,
@@ -50,56 +45,21 @@ describe("Rate Limiter", () => {
 });
 
 describe("Notifications", () => {
-	beforeEach(() => clearNotifications());
-
-	it("sends a notification and marks it as sent", () => {
-		const notif = sendNotification({
+	it("builds durable in-app and email outbox records", () => {
+		const notifications = missionAssignmentNotifications({
+			companyId: "company-a",
 			recipientId: "pedro",
-			channel: "email",
-			title: "Test",
-			body: "Test body",
+			recipientEmail: "pedro@test.com",
+			missionObjective: "Document filler",
+			missionId: "mission-1",
+			eventId: "assignment-1",
 		});
 
-		expect(notif.id).toContain("notif-");
-		expect(notif.title).toBe("Test");
-		expect(notif.recipientId).toBe("pedro");
-	});
-
-	it("notifyMissionAssigned creates a mission notification", () => {
-		const notif = notifyMissionAssigned(
-			"pedro",
-			"pedro@test.com",
-			"Document filler",
-			"mission-1",
-		);
-
-		expect(notif.title).toContain("mission");
-		expect(notif.body).toContain("Document filler");
-		expect(notif.actionUrl).toBe("/missions/mission-1");
-	});
-
-	it("retrieves notifications by recipient", () => {
-		sendNotification({
-			recipientId: "pedro",
-			channel: "in_app",
-			title: "A",
-			body: "A",
-		});
-		sendNotification({
-			recipientId: "laura",
-			channel: "in_app",
-			title: "B",
-			body: "B",
-		});
-		sendNotification({
-			recipientId: "pedro",
-			channel: "in_app",
-			title: "C",
-			body: "C",
-		});
-
-		const pedroNotifs = getNotifications("pedro");
-		expect(pedroNotifs).toHaveLength(2);
+		expect(notifications).toHaveLength(2);
+		expect(notifications.find((item) => item.channel === "in_app")?.status)
+			.toBe("delivered");
+		expect(notifications.find((item) => item.channel === "email")?.status)
+			.toBe("pending");
 	});
 });
 
@@ -111,10 +71,9 @@ describe("Multi-company", () => {
 		expect(company.name).toBe("Acme Corporation");
 	});
 
-	it("demo company exists by default", () => {
-		expect(companyExists("demo-corp")).toBe(true);
-		const demo = getCompany("demo-corp");
-		expect(demo?.name).toBe("Demo Corporation");
+	it("does not create a demo company by default", () => {
+		expect(companyExists("demo-corp")).toBe(false);
+		expect(getCompany("demo-corp")).toBeUndefined();
 	});
 
 	it("lists all companies", () => {

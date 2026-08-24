@@ -1,12 +1,10 @@
 export const NODE_TYPES = [
   "Person",
   "Knowledge",
-  "Process",
-  "Asset",
-  "Unit",
-  "Risk",
-  "Client",
-  "Supplier",
+	"Process",
+	"Asset",
+	"OrganizationalUnit",
+	"ExternalParty",
   "Project",
   "System",
   "Document",
@@ -27,6 +25,9 @@ export const EDGE_TYPES = [
   "MANAGES",
   "ADMINISTERS",
   "DOCUMENTS",
+	"INTERACTS_WITH",
+	"REPLACES",
+	"VALIDATES",
 ] as const;
 
 export type EdgeType = (typeof EDGE_TYPES)[number];
@@ -108,21 +109,20 @@ const edgeEndpointRules = {
   // cross-type dependency, e.g. Process DEPENDS_ON Supplier, Client DEPENDS_ON Process.
   DEPENDS_ON: [{ from: "*", to: "*" }],
   BELONGS_TO: [
-    { from: "Person", to: "Unit" },
-    { from: "Process", to: "Unit" },
-    { from: "Asset", to: "Unit" },
-    { from: "Project", to: "Unit" },
-    { from: "System", to: "Unit" },
+	{ from: "Person", to: "OrganizationalUnit" },
+	{ from: "Process", to: "OrganizationalUnit" },
+	{ from: "Asset", to: "OrganizationalUnit" },
+	{ from: "Project", to: "OrganizationalUnit" },
+	{ from: "System", to: "OrganizationalUnit" },
   ],
   // People-centric relationships that surface succession + contact risk.
   BACKS_UP: [{ from: "Person", to: "Person" }],
   OWNS: [
-    { from: "Person", to: "Client" },
-    { from: "Person", to: "Supplier" },
+		{ from: "Person", to: "ExternalParty" },
   ],
   MANAGES: [
     { from: "Person", to: "Project" },
-    { from: "Person", to: "Unit" },
+		{ from: "Person", to: "OrganizationalUnit" },
   ],
   ADMINISTERS: [{ from: "Person", to: "System" }],
   // Documents close the loop: an artifact that documents knowledge / a process.
@@ -130,6 +130,24 @@ const edgeEndpointRules = {
     { from: "Document", to: "Knowledge" },
     { from: "Document", to: "Process" },
   ],
+	INTERACTS_WITH: [
+		{ from: "Person", to: "ExternalParty" },
+		{ from: "Process", to: "ExternalParty" },
+		{ from: "OrganizationalUnit", to: "ExternalParty" },
+	],
+	REPLACES: [
+		{ from: "Person", to: "Person" },
+		{ from: "Process", to: "Process" },
+		{ from: "Asset", to: "Asset" },
+		{ from: "System", to: "System" },
+		{ from: "Document", to: "Document" },
+	],
+	VALIDATES: [
+		{ from: "Person", to: "Knowledge" },
+		{ from: "Person", to: "Process" },
+		{ from: "Person", to: "Asset" },
+		{ from: "Person", to: "Document" },
+	],
 } as const satisfies Record<EdgeType, readonly { from: NodeType | "*"; to: NodeType | "*" }[]>;
 
 export function isNodeType(value: string): value is NodeType {

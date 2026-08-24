@@ -1,92 +1,71 @@
-# Despliegue — prueba real en producción
+# Production deployment
 
-Company Brain OS se despliega con `docker-compose.prod.yml`, que levanta tres
-servicios: **postgres** (pgvector), un **migrate** de una sola pasada
-(migraciones + seed) y la **app** Next.js (`next start`, salida `standalone`).
+`docker-compose.prod.yml` runs PostgreSQL/pgvector, one-shot migrations, one-shot least-privilege role provisioning, ClamAV, the Next.js application and a separate worker. Production never runs the demo seed.
 
-## Requisitos
+## Requirements
 
-- Un host con Docker + Docker Compose (VPS, o tu máquina con un dominio/puerto
-  accesible).
-- Tres secretos (el compose se niega a arrancar sin ellos).
+- Docker Engine and Docker Compose.
+- A TLS reverse proxy and domain.
+- Persistent encrypted storage or an S3-compatible bucket.
+- URL-safe secrets. Avoid reserved URL characters in database passwords because Compose constructs database URLs.
 
-## 1. Variables de entorno
+## 1. Environment
 
-Crea un `.env` **en la raíz del repo** (junto a `docker-compose.prod.yml`).
-Está cubierto por `.gitignore`, no se commitea.
+Create `.env` beside `docker-compose.prod.yml`:
 
 ```bash
-# Obligatorios
-DB_PASSWORD=<contraseña-fuerte-de-postgres>
-AUTH_SECRET=<openssl rand -base64 32>
-SEED_PASSWORD=<contraseña-de-los-usuarios-demo>
+DB_PASSWORD=<openssl rand -hex 32>
+APP_DB_PASSWORD=<openssl rand -hex 32>
+AUTH_SECRET=<openssl rand -base64 48>
+APP_BASE_URL=https://brain.example.com
 
-# Opcionales
-STORAGE_DRIVER=disk            # "disk" (def.) o "s3"
-# TRANSCRIPTION_PROVIDER=...   # sin esto, la transcripción degrada a "unavailable"
-# OPENCODE_API_KEY=...         # sin esto, los playbooks usan heurísticas (sin LLM)
+# Optional providers
+STORAGE_DRIVER=disk              # use s3 for multi-host production
+TRANSCRIPTION_PROVIDER=none      # whisper-cpp, cloud or none
+NOTIFICATION_EMAIL_WEBHOOK_URL=https://mailer.example.com/company-brain
+NOTIFICATION_EMAIL_WEBHOOK_TOKEN=<provider token>
+GEMINI_API_KEY=
+GEMINI_MODEL=gemini-2.5-flash
 ```
 
-Genera el secreto de auth con:
-```bash
-openssl rand -base64 32      # o:  cd web && npx auth secret
-```
+The database owner is used only by migrations and role provisioning. The app and worker connect as `company_brain_app`, which cannot bypass RLS.
 
-## 2. Arrancar
+For S3-compatible storage, also set `S3_BUCKET`, `S3_REGION`, optional `S3_ENDPOINT`, `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`.
+
+## 2. Start
 
 ```bash
 docker compose -f docker-compose.prod.yml up -d --build
-```
-
-Esto, en orden:
-1. Arranca Postgres y espera a que esté `healthy`.
-2. Corre `db:migrate` + `db:seed` (crea la empresa demo y 4 usuarios).
-3. Arranca la app en el puerto **3000**.
-
-Comprueba el estado:
-```bash
 docker compose -f docker-compose.prod.yml ps
-docker compose -f docker-compose.prod.yml logs -f app
+docker compose -f docker-compose.prod.yml logs --tail=200 migrate provision-app-role clamav app worker
 ```
 
-## 3. Entrar
+ClamAV may need several minutes on first boot to download signatures. The app waits for it to become healthy; uploads then fail closed if scanning becomes unavailable.
 
-Abre `http://<host>:3000`. Logins sembrados (contraseña = `SEED_PASSWORD`):
+## 3. First organization
 
-- `admin@companybrain.os`  (owner)
-- `maria@companybrain.os`
-- `pedro@companybrain.os`
-- `laura@companybrain.os`
+Open the TLS URL and register the first owner. No company, user or sample graph is created automatically. `npm run db:seed` is strictly a local demonstration command.
 
-## 4. Recorrido de prueba sugerido
+## 4. Release verification
 
-1. Login → dashboard (debe mostrar exposición €, riesgos).
-2. `/capture` → responde la entrevista → **Confirm & save** → revisa `/people`.
-3. `/inbox` → sube un CSV/TXT o pega texto → revisa propuestas → aprueba.
-4. `/simulator` → marca una persona → mira el riesgo nuevo y el coste €.
-5. `/succession` → elige persona + último día → genera playbook → guarda →
-   transiciones de estado → Copy Markdown.
+Before exposing the deployment:
 
-## Notas / limitaciones conocidas
+1. Confirm the app uses `company_brain_app`, not `postgres`.
+2. Run the smoke sequence in [the production runbook](docs/operations/PRODUCTION_RUNBOOK.md).
+3. Verify a normal upload succeeds and the EICAR test signature is rejected in a controlled environment.
+4. Verify backup/restore for both database and object storage.
+5. Map each assessor/reviewer login to a distinct canonical Person in Settings and verify self-assessment/review is rejected.
+6. Assign a mission and confirm the in-app notification plus provider-acknowledged email delivery.
+7. Confirm HTTPS, secure cookies, request-size limits and security headers at the proxy.
 
-- **Worker de transcripción:** arranca solo en boot (runtime Node). Sin
-  `TRANSCRIPTION_PROVIDER` configurado, los jobs degradan a "unavailable" —
-  no fallan, simplemente no transcriben. Para apagarlo en dev:
-  `TRANSCRIPTION_WORKER_DISABLED=1`.
-- **IA de playbooks:** sin `OPENCODE_API_KEY`, la sucesión usa heurísticas
-  deterministas (sin enriquecimiento LLM).
-- **tldraw** (`/graph`, `/canvas`): muestra marca de agua "get a license for
-  production" hasta poner una licencia de tldraw. Cosmético, no bloquea.
-- **HTTPS / dominio:** el compose expone HTTP en :3000. Para producción real,
-  pon un reverse proxy (Caddy / Nginx / Traefik) con TLS delante. `AUTH_TRUST_HOST`
-  ya está en `true` para funcionar detrás de proxy.
-- **Subidas:** se guardan en el volumen `uploads`. Para S3/R2, pon
-  `STORAGE_DRIVER=s3` + credenciales (`npm i @aws-sdk/client-s3` ya resuelto en
-  build), ver `web/.env.example`.
-
-## Parar / reiniciar
+## 5. Operations
 
 ```bash
-docker compose -f docker-compose.prod.yml down        # conserva volúmenes (datos)
-docker compose -f docker-compose.prod.yml down -v     # BORRA datos y uploads
+docker compose -f docker-compose.prod.yml logs -f app worker
+docker compose -f docker-compose.prod.yml restart app worker
+docker compose -f docker-compose.prod.yml down       # preserves volumes
 ```
+
+`docker compose ... down -v` permanently deletes database, upload and antivirus volumes; use it only for an intentionally disposable environment.
+
+See [PRODUCTION_RUNBOOK.md](docs/operations/PRODUCTION_RUNBOOK.md) for backup, restore, incident response and rollback.

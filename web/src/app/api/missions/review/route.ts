@@ -8,8 +8,9 @@ import type { KnowledgeNode } from "@/domain/graph";
  * POST /api/missions/review — the boss approves or rejects a submission.
  * Body: { submissionId, decision: "approve"|"reject", rejectionReason? }.
  *
- * Approve → mission closed and the target knowledge node is marked documented +
- * validated (which lowers its bus-factor risk). Reject → the reason is sent
+ * Approve → content evidence is validated and the target knowledge is marked
+ * documented. It does not close the mission or remove person-dependency risk;
+ * verified transfer is a separate step. Reject → the reason is sent
  * back to the employee and the mission returns to in_progress.
  * Requires mission.close (validator+).
  */
@@ -53,12 +54,14 @@ export async function POST(request: Request) {
 		return NextResponse.json({ error: (err as Error).message }, { status: 400 });
 	}
 
-	// On approval, close the knowledge loop: mark the target node documented +
-	// validated so the risk engine stops flagging it. Best-effort — a non-
-	// knowledge target (or a missing node) must not fail the review.
+	// Content approval records documentation, not transfer competency. The risk
+	// engine deliberately keeps a bus-factor risk open until /missions/verify.
 	if (result.approvedTargetNodeId) {
 		try {
-			const graph = getGraphService(user.companyId, user.id);
+			const graph = getGraphService(user.companyId, user.id, {
+				sourceType: "mission_submission",
+				sourceId: result.submission.id,
+			});
 			const node = await graph.readNode(result.approvedTargetNodeId);
 			if (node?.type === "Knowledge") {
 				await graph.updateNode(result.approvedTargetNodeId, {
@@ -67,7 +70,10 @@ export async function POST(request: Request) {
 				} as Partial<KnowledgeNode>);
 			}
 		} catch {
-			// ignore — review already succeeded
+			return NextResponse.json(
+				{ error: "Review was recorded but the canonical projection is pending retry" },
+				{ status: 503 },
+			);
 		}
 	}
 

@@ -29,4 +29,21 @@ describe("drizzle migration metadata", () => {
 		expect(sql).toContain('CONSTRAINT "companies_slug_unique" UNIQUE');
 		expect(sql).toContain('CREATE INDEX "companies_slug_idx"');
 	});
+
+	it("registers and bootstraps required pgvector in the production migration path", () => {
+		const journal = JSON.parse(
+			readFileSync(join(drizzleDir, "meta", "_journal.json"), "utf8"),
+		) as { entries: Array<{ idx: number; tag: string }> };
+		const sql = readFileSync(
+			join(drizzleDir, "0027_pgvector_bootstrap.sql"),
+			"utf8",
+		);
+
+		expect(journal.entries).toContainEqual(expect.objectContaining({
+			idx: 27,
+			tag: "0027_pgvector_bootstrap",
+		}));
+		expect(sql).toContain("CREATE EXTENSION IF NOT EXISTS vector");
+		expect(sql).toContain("TYPE vector(768)");
+	});
 });

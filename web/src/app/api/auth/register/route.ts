@@ -5,9 +5,11 @@ import { createDb } from "@/db";
 import { companies, users } from "@/db/schema";
 import {
 	normalizeSignupBody,
+	PASSWORD_BCRYPT_ROUNDS,
 	validateSignup,
 	type SignupBody,
 } from "@/auth/signup-validation";
+import { checkDistributedRateLimit } from "@/lib/rate-limiter";
 
 export const runtime = "nodejs";
 
@@ -44,6 +46,19 @@ function invalid(field: string) {
 }
 
 export async function POST(req: Request) {
+	const forwarded = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+	const client = forwarded || req.headers.get("x-real-ip")?.trim() || "unknown";
+	try {
+		const limit = await checkDistributedRateLimit(`signup:${client}`, 5, 3);
+		if (!limit.allowed) {
+			return NextResponse.json(
+				{ error: "Too many signup attempts" },
+				{ status: 429, headers: { "Retry-After": String(limit.retryAfter) } },
+			);
+		}
+	} catch {
+		return NextResponse.json({ error: "Signup temporarily unavailable" }, { status: 503 });
+	}
 	let raw: unknown;
 	try {
 		raw = await req.json();
@@ -78,7 +93,7 @@ export async function POST(req: Request) {
 				slug: body.slug,
 			});
 
-			const passwordHash = await hash(body.password, 10);
+			const passwordHash = await hash(body.password, PASSWORD_BCRYPT_ROUNDS);
 			const [created] = await tx
 				.insert(users)
 				.values({

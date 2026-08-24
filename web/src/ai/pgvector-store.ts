@@ -4,11 +4,9 @@
  * Requires the pgvector extension (already installed).
  * Falls back to in-memory VectorStore if DB is unavailable.
  *
- * Multi-tenant isolation: `node_embeddings` has no `company_id` column,
- * so retrieval joins to `nodes.company_id` and over-fetches `topK * 4`
- * candidates before the JS-side tenant filter slices to `topK`. The
- * in-memory fallback path has no SQL filter, so `search` on that path
- * returns all matches and the caller is expected to filter by tenant.
+ * Multi-tenant isolation: DB-backed embeddings carry `company_id`, are covered
+ * by RLS, and are accessed only inside a tenant transaction. The nodes join is
+ * retained for metadata and the caller performs a second tenant check.
  */
 
 import { sql } from "drizzle-orm";
@@ -19,20 +17,23 @@ import {
 } from "./vector-store";
 import { nodeEmbeddings } from "@/db/schema";
 import type { Db } from "@/db/index";
+import { requireOrganizationId } from "@/auth/organization-context";
+import { withTenantTransaction } from "@/db/tenant-transaction";
 
 export interface PgVectorStore {
 	upsert(
 		id: string,
 		vector: number[],
 		metadata?: Record<string, unknown>,
+		companyId?: string,
 	): Promise<void>;
-	delete(id: string): Promise<void>;
+	delete(id: string, companyId?: string): Promise<void>;
 	search(
 		queryVector: number[],
 		topK?: number,
 		companyId?: string,
 	): Promise<SearchResult[]>;
-	clear(): Promise<void>;
+	clear(companyId?: string): Promise<void>;
 }
 
 const EXPECTED_DIM = 768;
@@ -101,27 +102,31 @@ export function createPgVectorStore(db?: Db): PgVectorStore {
 	}
 
 	return {
-		async upsert(id, vector) {
+		async upsert(id, vector, _metadata, companyId) {
 			assertDimension(vector);
-			await db
+			const tenantId = requireOrganizationId(companyId);
+			await withTenantTransaction(db, tenantId, (tx) => tx
 				.insert(nodeEmbeddings)
 				.values({
 					nodeId: id,
+					companyId: tenantId,
 					embedding: vector,
 				})
 				.onConflictDoUpdate({
 					target: nodeEmbeddings.nodeId,
-					set: { embedding: vector },
-				});
+					set: { embedding: vector, companyId: tenantId },
+				}));
 		},
 
-		async delete(id) {
-			await db
+		async delete(id, companyId) {
+			const tenantId = requireOrganizationId(companyId);
+			await withTenantTransaction(db, tenantId, (tx) => tx
 				.delete(nodeEmbeddings)
-				.where(sql`${nodeEmbeddings.nodeId} = ${id}`);
+				.where(sql`${nodeEmbeddings.nodeId} = ${id} AND ${nodeEmbeddings.companyId} = ${tenantId}`));
 		},
 
 		async search(queryVector, topK = DEFAULT_TOP_K, companyId) {
+			const tenantId = requireOrganizationId(companyId);
 			const lit = toVectorLiteral(queryVector);
 			const overFetch = topK * 4;
 
@@ -129,20 +134,17 @@ export function createPgVectorStore(db?: Db): PgVectorStore {
 			// `<=>` is cosine distance; similarity = 1 - distance.
 			// Over-fetch `topK * 4` inside SQL, then the caller (retrieve.ts)
 			// slices to `topK` after the JS-side tenant filter.
-			const tenantClause = companyId
-				? sql`JOIN nodes n ON n.id = ne.node_id WHERE n.company_id = ${companyId}`
-				: sql``;
-
-			const rows = await db.execute(
+			const rows = await withTenantTransaction(db, tenantId, (tx) => tx.execute(
 				sql`SELECT ne.node_id AS node_id,
 						1 - (ne.embedding <=> ${lit}::vector) AS similarity,
 						n.name AS name,
 						n.type AS type
 					FROM node_embeddings ne
-					${tenantClause}
+					JOIN nodes n ON n.id = ne.node_id AND n.company_id = ne.company_id
+					WHERE ne.company_id = ${tenantId}
 					ORDER BY ne.embedding <=> ${lit}::vector
 					LIMIT ${overFetch}`,
-			);
+			));
 
 			const results: SearchResult[] = [];
 			for (const row of rows.rows as Array<Record<string, unknown>>) {
@@ -159,8 +161,11 @@ export function createPgVectorStore(db?: Db): PgVectorStore {
 			return results;
 		},
 
-		async clear() {
-			await db.delete(nodeEmbeddings);
+		async clear(companyId) {
+			const tenantId = requireOrganizationId(companyId);
+			await withTenantTransaction(db, tenantId, (tx) => tx
+				.delete(nodeEmbeddings)
+				.where(sql`${nodeEmbeddings.companyId} = ${tenantId}`));
 		},
 	};
 }

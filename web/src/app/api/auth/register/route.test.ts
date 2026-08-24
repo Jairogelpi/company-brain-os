@@ -1,12 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { createDbMock, hashMock } = vi.hoisted(() => ({
+const { createDbMock, hashMock, checkRateLimitMock } = vi.hoisted(() => ({
 	createDbMock: vi.fn(),
 	hashMock: vi.fn(async () => "$2b$10$hashed-password"),
+	checkRateLimitMock: vi.fn(),
 }));
 
 vi.mock("@/db", () => ({ createDb: createDbMock }));
 vi.mock("bcryptjs", () => ({ hash: hashMock }));
+vi.mock("@/lib/rate-limiter", () => ({
+	checkDistributedRateLimit: checkRateLimitMock,
+}));
 
 type FakeDbOptions = {
 	emailRows?: unknown[];
@@ -73,7 +77,7 @@ async function post(body: unknown) {
 
 const validBody = {
 	email: "Owner@Example.com",
-	password: "password123",
+	password: "correct-horse-battery",
 	companyName: "Acme Corp",
 	slug: "acme-corp",
 };
@@ -82,6 +86,11 @@ describe("POST /api/auth/register", () => {
 	beforeEach(() => {
 		vi.resetModules();
 		createDbMock.mockReset();
+		checkRateLimitMock.mockReset().mockResolvedValue({
+			allowed: true,
+			remaining: 2,
+			retryAfter: 0,
+		});
 		hashMock.mockClear();
 		hashMock.mockResolvedValue("$2b$10$hashed-password");
 	});
@@ -100,7 +109,7 @@ describe("POST /api/auth/register", () => {
 			role: "owner",
 			companyId: "acme-corp",
 		});
-		expect(hashMock).toHaveBeenCalledWith("password123", 10);
+		expect(hashMock).toHaveBeenCalledWith("correct-horse-battery", 12);
 		expect(db.insertedCompanies).toHaveLength(1);
 		expect(db.insertedUsers).toEqual([
 			expect.objectContaining({
@@ -112,6 +121,14 @@ describe("POST /api/auth/register", () => {
 			}),
 		]);
 		expect(JSON.stringify(json)).not.toContain("password");
+	});
+
+	it("rate-limits repeated signup attempts before reading business data", async () => {
+		checkRateLimitMock.mockResolvedValue({ allowed: false, remaining: 0, retryAfter: 30 });
+		const res = await post(validBody);
+		expect(res.status).toBe(429);
+		expect(res.headers.get("retry-after")).toBe("30");
+		expect(createDbMock).not.toHaveBeenCalled();
 	});
 
 	it("rejects duplicate email without inserting", async () => {

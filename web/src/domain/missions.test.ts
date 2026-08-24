@@ -8,6 +8,8 @@ import {
 	createArtifact,
 	computeMissionStats,
 	completeMission,
+	transferVerificationIssues,
+	type TransferVerification,
 } from "./missions";
 
 const sampleRisk: DetectedRisk = {
@@ -20,6 +22,10 @@ const sampleRisk: DetectedRisk = {
 	message: "Bus factor 1",
 	confidence: 22,
 	trigger: "test",
+	ruleId: "test",
+	ruleVersion: 1,
+	inputFacts: {},
+	evidenceRefs: [],
 };
 
 const mediumRisk: DetectedRisk = {
@@ -32,6 +38,27 @@ const mediumRisk: DetectedRisk = {
 	message: "Undocumented",
 	confidence: 40,
 	trigger: "test",
+	ruleId: "test",
+	ruleVersion: 1,
+	inputFacts: {},
+	evidenceRefs: [],
+};
+
+const approvedVerification: TransferVerification = {
+	id: "verification-1",
+	missionId: "mission-spof-k-filler",
+	targetNodeId: "k-filler",
+	backupPersonId: "laura",
+	assessorId: "user-pedro",
+	assessorPersonId: "pedro",
+	competencyLevel: 4,
+	accessVerified: true,
+	evidenceRefs: ["artifact:sop-1", "assessment:run-1"],
+	status: "approved",
+	reviewerId: "user-validator",
+	reviewerPersonId: "validator",
+	createdAt: "2026-08-01T00:00:00.000Z",
+	reviewedAt: "2026-08-02T00:00:00.000Z",
 };
 
 describe("Mission System", () => {
@@ -89,14 +116,12 @@ describe("Mission System", () => {
 			expect(updated.status).toBe("in_progress");
 		});
 
-		it("transitions through full lifecycle", () => {
+		it("transitions through content validation but not directly to closure", () => {
 			let m = createMissionFromRisk(sampleRisk, "owner-1");
 			m = transitionMission(m, "in_progress");
 			m = transitionMission(m, "submitted");
 			m = transitionMission(m, "validated");
-			m = transitionMission(m, "closed");
-			expect(m.status).toBe("closed");
-			expect(m.closedAt).toBeDefined();
+			expect(() => transitionMission(m, "closed")).toThrow();
 		});
 
 		it("throws on invalid transition", () => {
@@ -104,10 +129,9 @@ describe("Mission System", () => {
 			expect(() => transitionMission(mission, "validated")).toThrow();
 		});
 
-		it("closed missions cannot transition further", () => {
-			let m = createMissionFromRisk(sampleRisk, "owner-1");
-			m = transitionMission(m, "closed");
-			expect(() => transitionMission(m, "in_progress")).toThrow();
+		it("open missions cannot bypass evidence and close directly", () => {
+			const mission = createMissionFromRisk(sampleRisk, "owner-1");
+			expect(() => transitionMission(mission, "closed")).toThrow();
 		});
 	});
 
@@ -142,13 +166,11 @@ describe("Mission System", () => {
 		it("computes stats from a list of missions", () => {
 			const m1 = createMissionFromRisk(sampleRisk, "owner-1");
 			const m2 = createMissionFromRisk(mediumRisk, "owner-1");
-			const m1Closed = transitionMission(
-				transitionMission(
-					transitionMission(transitionMission(m1, "in_progress"), "submitted"),
-					"validated",
-				),
-				"closed",
+			const validated = transitionMission(
+				transitionMission(transitionMission(m1, "in_progress"), "submitted"),
+				"validated",
 			);
+			const m1Closed = completeMission(validated, approvedVerification);
 
 			const stats = computeMissionStats([m1Closed, m2]);
 
@@ -165,14 +187,53 @@ describe("Mission System", () => {
 			m = transitionMission(m, "in_progress");
 			m = transitionMission(m, "submitted");
 			m = transitionMission(m, "validated");
-			m = completeMission(m);
+			m = completeMission(m, approvedVerification);
 
 			expect(m.status).toBe("closed");
 		});
 
 		it("throws if mission is not validated", () => {
 			const m = createMissionFromRisk(sampleRisk, "owner-1");
-			expect(() => completeMission(m)).toThrow(/validated/);
+			expect(() => completeMission(m, approvedVerification)).toThrow(/validated/);
+		});
+
+		it("rejects documentation-only, low competency, missing access, and self-review", () => {
+			const mission = {
+				...createMissionFromRisk(sampleRisk, "owner-1"),
+				status: "validated" as const,
+			};
+			const invalid = {
+				...approvedVerification,
+				competencyLevel: 2,
+				accessVerified: false,
+				evidenceRefs: [],
+				reviewerId: "user-laura",
+				reviewerPersonId: "laura",
+			};
+
+			expect(transferVerificationIssues(mission, invalid)).toEqual([
+				"insufficient_competency",
+				"access_not_verified",
+				"missing_evidence",
+				"self_review",
+			]);
+			expect(() => completeMission(mission, invalid)).toThrow(/verified transfer/);
+		});
+
+		it("requires explicit canonical identities for assessor and reviewer", () => {
+			const mission = {
+				...createMissionFromRisk(sampleRisk, "owner-1"),
+				status: "validated" as const,
+			};
+			const missingMappings = {
+				...approvedVerification,
+				assessorPersonId: undefined,
+				reviewerPersonId: undefined,
+			};
+			expect(transferVerificationIssues(mission, missingMappings)).toEqual([
+				"missing_assessor_mapping",
+				"missing_reviewer_mapping",
+			]);
 		});
 	});
 });

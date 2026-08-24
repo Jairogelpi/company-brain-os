@@ -1,5 +1,6 @@
 import { createGraphService, type GraphService } from "./graph-service";
 import type { GraphEdge, GraphNode } from "./graph";
+import { requireOrganizationId } from "@/auth/organization-context";
 
 /**
  * Builds a synchronous in-memory GraphService from DB-loaded nodes/edges,
@@ -8,9 +9,9 @@ import type { GraphEdge, GraphNode } from "./graph";
 export function hydrateGraphService(
 	nodes: GraphNode[],
 	edges: GraphEdge[],
-	companyId = "demo-corp",
+	companyId: string,
 ): GraphService {
-	const service = createGraphService({ actorId: "viewer", companyId });
+	const service = createGraphService({ actorId: "viewer", companyId: requireOrganizationId(companyId) });
 	// ponytail: swallow per-item errors — DB data is already validated, and one
 	// bad row shouldn't blank the whole canvas.
 	for (const n of nodes) {

@@ -1,5 +1,7 @@
 # Motor Universal de Entrevista Adaptativa
 
+> Estado: fundamento histórico del onboarding. La entrevista actual produce propuestas para revisión humana; el contrato aceptado y la ontología vigente están en `docs/product/COMPANY_BRAIN_OS_V4.md`. El objetivo de ≤10 minutos es una hipótesis que debe medirse en pilotos, no un resultado comercial demostrado.
+
 **Parte de:** Company Brain OS — fase F0.5 (Onboarding / Time-to-First-Alarm)
 **Función:** un único motor de conversación que construye el grafo y produce la primera alarma para CUALQUIER empresa, sin guiones por sector.
 
@@ -51,7 +53,7 @@ Esto es lo que sustituye al guion por sector: no preguntas predefinidas, sino un
 
 ## 3. Traducción de lenguaje a grafo (vocabulario emergente)
 
-Cada respuesta se mapea al esquema universal 6+7. El sector vive en atributos, nunca en tipos:
+Cada respuesta se mapea a la ontología v4 cerrada. El sector vive en atributos, nunca en tipos inventados:
 
 | El dueño dice (sector) | La IA crea (universal) |
 |------------------------|------------------------|

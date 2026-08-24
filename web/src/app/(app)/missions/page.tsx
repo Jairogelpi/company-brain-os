@@ -6,9 +6,14 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import type { Mission, MissionSubmission } from "@/domain/missions";
+import type {
+	Mission,
+	MissionSubmission,
+	TransferVerification,
+} from "@/domain/missions";
 
-type CompanyUser = { id: string; name: string; email: string; role: string };
+type CompanyUser = { id: string; name: string; email: string; role: string; personNodeId?: string };
+type CompanyPerson = { id: string; name: string; source: "graph"; mappedUserId?: string };
 
 const STATUS_VARIANT: Record<
 	string,
@@ -35,7 +40,9 @@ export default function MissionsPage() {
 
 	const [missions, setMissions] = useState<Mission[]>([]);
 	const [submissions, setSubmissions] = useState<MissionSubmission[]>([]);
+	const [transferVerifications, setTransferVerifications] = useState<TransferVerification[]>([]);
 	const [users, setUsers] = useState<CompanyUser[]>([]);
+	const [people, setPeople] = useState<CompanyPerson[]>([]);
 	const [error, setError] = useState("");
 	const [loaded, setLoaded] = useState(false);
 
@@ -48,14 +55,20 @@ export default function MissionsPage() {
 		const data = (await res.json()) as {
 			items: Mission[];
 			submissions: MissionSubmission[];
+			transferVerifications: TransferVerification[];
 		};
 		setMissions(data.items);
 		setSubmissions(data.submissions ?? []);
+		setTransferVerifications(data.transferVerifications ?? []);
 		setLoaded(true);
 	}, []);
 
 	useEffect(() => {
 		reload();
+		fetch("/api/people")
+			.then((response) => response.ok ? response.json() : { people: [] })
+			.then((data) => setPeople(data.people ?? []))
+			.catch(() => {});
 		if (canManage) {
 			fetch("/api/users")
 				.then((r) => (r.ok ? r.json() : { users: [] }))
@@ -75,6 +88,12 @@ export default function MissionsPage() {
 				.filter((s) => s.missionId === missionId)
 				.sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0],
 		[submissions],
+	);
+	const latestVerification = useCallback(
+		(missionId: string) => transferVerifications
+			.filter((item) => item.missionId === missionId)
+			.sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0],
+		[transferVerifications],
 	);
 
 	const myTasks = useMemo(
@@ -96,7 +115,7 @@ export default function MissionsPage() {
 				<div className="eyebrow">Knowledge transfer</div>
 				<h1 className="text-[44px] font-semibold tracking-[-0.045em]">Missions</h1>
 				<p className="mt-1 text-sm text-muted-foreground">
-					Tasks to close knowledge gaps — documented, submitted and approved.
+					Document, assess a real backup, verify access, then recalculate the risk.
 				</p>
 			</header>
 
@@ -131,8 +150,11 @@ export default function MissionsPage() {
 							key={m.id}
 							mission={m}
 							submission={latestSubmission(m.id)}
+							verification={latestVerification(m.id)}
 							users={users}
+							people={people}
 							userName={userName}
+							currentUserId={user?.id ?? ""}
 							onChanged={reload}
 						/>
 					))}
@@ -155,7 +177,7 @@ function MyTaskCard({
 }) {
 	const canSubmit = ["open", "in_progress"].includes(mission.status);
 	return (
-		<Card className="space-y-3 p-5">
+		<Card id={mission.id} className="scroll-mt-20 space-y-3 p-5">
 			<div className="flex items-start justify-between gap-3">
 				<div>
 					<div className="font-medium">{mission.objective}</div>
@@ -189,7 +211,12 @@ function MyTaskCard({
 				</p>
 			)}
 			{mission.status === "closed" && (
-				<p className="text-sm text-emerald-600">Approved and closed. ✓</p>
+				<p className="text-sm text-emerald-600">Transfer verified and risk recalculated. ✓</p>
+			)}
+			{mission.status === "validated" && (
+				<p className="text-sm text-amber-700">
+					Documentation approved — waiting for an independently verified backup.
+				</p>
 			)}
 
 			{canSubmit && (
@@ -322,14 +349,20 @@ function SubmitForm({
 function ManageCard({
 	mission,
 	submission,
+	verification,
 	users,
+	people,
 	userName,
+	currentUserId,
 	onChanged,
 }: {
 	mission: Mission;
 	submission?: MissionSubmission;
+	verification?: TransferVerification;
 	users: CompanyUser[];
+	people: CompanyPerson[];
 	userName: (id?: string) => string;
+	currentUserId: string;
 	onChanged: () => void;
 }) {
 	const [assignee, setAssignee] = useState(mission.assigneeId ?? "");
@@ -460,7 +493,127 @@ function ManageCard({
 				</div>
 			)}
 
+			{mission.status === "validated" && (
+				<TransferVerificationPanel
+					mission={mission}
+					verification={verification}
+					users={users}
+					people={people}
+					currentUserId={currentUserId}
+					onChanged={onChanged}
+				/>
+			)}
+
 			{err && <p className="text-xs font-medium text-destructive">{err}</p>}
 		</Card>
+	);
+}
+
+function TransferVerificationPanel({
+	mission,
+	verification,
+	users,
+	people,
+	currentUserId,
+	onChanged,
+}: {
+	mission: Mission;
+	verification?: TransferVerification;
+	users: CompanyUser[];
+	people: CompanyPerson[];
+	currentUserId: string;
+	onChanged: () => void;
+}) {
+	const [backupPersonId, setBackupPersonId] = useState("");
+	const [competencyLevel, setCompetencyLevel] = useState(3);
+	const [accessVerified, setAccessVerified] = useState(false);
+	const [evidence, setEvidence] = useState("");
+	const [rejectionReason, setRejectionReason] = useState("");
+	const [busy, setBusy] = useState(false);
+	const [error, setError] = useState("");
+
+	async function send(payload: Record<string, unknown>) {
+		setBusy(true);
+		setError("");
+		try {
+			const response = await fetch("/api/missions/verify", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(payload),
+			});
+			if (!response.ok) {
+				const body = await response.json().catch(() => ({})) as { error?: string };
+				setError(body.error ?? "Verification failed.");
+				return;
+			}
+			onChanged();
+		} finally {
+			setBusy(false);
+		}
+	}
+
+	if (verification?.status === "proposed") {
+		const currentPersonId = users.find((member) => member.id === currentUserId)?.personNodeId;
+		const independent = Boolean(currentPersonId) &&
+			currentUserId !== verification.assessorId &&
+			currentPersonId !== verification.assessorPersonId &&
+			currentPersonId !== verification.backupPersonId;
+		return (
+			<div className="space-y-3 border-t border-border pt-3">
+				<div className="eyebrow">Independent transfer review</div>
+				<p className="text-sm text-muted-foreground">
+					Backup {verification.backupPersonId} · competency {verification.competencyLevel}/5 · access verified · {verification.evidenceRefs.length} evidence reference(s)
+				</p>
+				{independent ? (
+					<div className="flex flex-wrap gap-2">
+						<Button size="sm" disabled={busy} onClick={() => send({ action: "review", verificationId: verification.id, decision: "approve" })}>
+							Approve transfer and recalculate risk
+						</Button>
+						<input className="h-9 flex-1 rounded-md border border-border bg-background px-2 text-sm" value={rejectionReason} onChange={(event) => setRejectionReason(event.target.value)} placeholder="Rejection reason…" />
+						<Button size="sm" variant="destructive" disabled={busy || !rejectionReason.trim()} onClick={() => send({ action: "review", verificationId: verification.id, decision: "reject", rejectionReason })}>
+							Reject
+						</Button>
+					</div>
+				) : (
+					<p className="text-sm text-amber-700">A mapped, independent validator must review this assessment. Owners manage identity mappings in Settings.</p>
+				)}
+				{error && <p className="text-xs font-medium text-destructive">{error}</p>}
+			</div>
+		);
+	}
+
+	return (
+		<div className="space-y-3 border-t border-border pt-3">
+			<div className="eyebrow">Verify a real backup</div>
+			<div className="grid gap-2 sm:grid-cols-2">
+				<select className="h-9 rounded-md border border-border bg-background px-2 text-sm" value={backupPersonId} onChange={(event) => setBackupPersonId(event.target.value)}>
+					<option value="">Backup person…</option>
+					{people.filter((item) => item.id !== users.find((member) => member.id === currentUserId)?.personNodeId).map((item) => (
+						<option key={item.id} value={item.id}>{item.name}</option>
+					))}
+				</select>
+				<select className="h-9 rounded-md border border-border bg-background px-2 text-sm" value={competencyLevel} onChange={(event) => setCompetencyLevel(Number(event.target.value))}>
+					<option value={3}>Competency 3 — assisted</option>
+					<option value={4}>Competency 4 — independent</option>
+					<option value={5}>Competency 5 — can teach</option>
+				</select>
+			</div>
+			<textarea className="w-full rounded-md border border-border bg-background p-2 text-sm" rows={2} value={evidence} onChange={(event) => setEvidence(event.target.value)} placeholder="Evidence references, one per line (artifact URL, observed run, assessment)…" />
+			<label className="flex items-center gap-2 text-sm">
+				<input type="checkbox" checked={accessVerified} onChange={(event) => setAccessVerified(event.target.checked)} />
+				Required system, credential and physical access verified
+			</label>
+			<Button size="sm" disabled={busy || !backupPersonId || !accessVerified || !evidence.trim()} onClick={() => send({
+				action: "submit",
+				missionId: mission.id,
+				backupPersonId,
+				competencyLevel,
+				accessVerified,
+				evidenceRefs: evidence.split("\n").map((item) => item.trim()).filter(Boolean),
+			})}>
+				Submit transfer assessment
+			</Button>
+			{error && <p className="text-xs font-medium text-destructive">{error}</p>}
+		</div>
 	);
 }

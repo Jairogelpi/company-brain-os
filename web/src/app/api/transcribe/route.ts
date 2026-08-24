@@ -3,6 +3,7 @@ import { requireApiUser } from "@/auth/api-guard";
 import { getStorage } from "@/lib/storage";
 import { classifyMediaType, maxBytesForMime } from "@/lib/upload-policy";
 import { createJob } from "@/server/transcription-jobs";
+import { tenantStorageKey } from "@/lib/upload-security";
 
 const SAFE_NAME = /^[a-f0-9-]{36}\.[a-z0-9]+$/i;
 
@@ -35,7 +36,8 @@ export async function POST(request: Request) {
 	}
 
 	const storage = getStorage();
-	const size = await storage.size(filename);
+	const storageKey = tenantStorageKey(user.companyId, filename);
+	const size = await storage.size(storageKey);
 	if (size === null) {
 		return NextResponse.json({ error: "File not found" }, { status: 404 });
 	}
@@ -51,7 +53,7 @@ export async function POST(request: Request) {
 		companyId: user.companyId,
 		userId: user.id,
 		source: body.source?.trim() || filename,
-		storageKey: filename,
+		storageKey,
 		mimeType,
 	});
 

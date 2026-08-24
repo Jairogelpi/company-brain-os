@@ -11,39 +11,59 @@
  * the filesystem or a cloud SDK directly.
  */
 
-import { writeFile, readFile, mkdir, stat } from "fs/promises";
+import { writeFile, readFile, mkdir, stat, unlink } from "fs/promises";
 import { existsSync } from "fs";
-import { join } from "path";
+import { dirname, join, resolve, sep } from "path";
+import {
+	GetObjectCommand,
+	HeadObjectCommand,
+	PutObjectCommand,
+	DeleteObjectCommand,
+	S3Client,
+} from "@aws-sdk/client-s3";
 
 export interface StorageAdapter {
 	put(key: string, body: Buffer, contentType?: string): Promise<void>;
 	get(key: string): Promise<Buffer | null>;
 	exists(key: string): Promise<boolean>;
 	size(key: string): Promise<number | null>;
+	delete(key: string): Promise<void>;
 }
 
 // --- Disk adapter (default) ---
 
 function createDiskAdapter(): StorageAdapter {
-	const dir = process.env.STORAGE_DIR ?? join(process.cwd(), "uploads");
+	const dir = resolve(process.env.STORAGE_DIR ?? join(process.cwd(), "uploads"));
+	function objectPath(key: string): string {
+		const path = resolve(dir, key);
+		if (path !== dir && !path.startsWith(`${dir}${sep}`)) {
+			throw new Error("Invalid storage key");
+		}
+		return path;
+	}
 
 	return {
 		async put(key, body) {
-			await mkdir(dir, { recursive: true });
-			await writeFile(join(dir, key), body);
+			const path = objectPath(key);
+			await mkdir(dirname(path), { recursive: true });
+			await writeFile(path, body, { flag: "wx", mode: 0o600 });
 		},
 		async get(key) {
-			const path = join(dir, key);
+			const path = objectPath(key);
 			if (!existsSync(path)) return null;
 			return readFile(path);
 		},
 		async exists(key) {
-			return existsSync(join(dir, key));
+			return existsSync(objectPath(key));
 		},
 		async size(key) {
-			const path = join(dir, key);
+			const path = objectPath(key);
 			if (!existsSync(path)) return null;
 			return (await stat(path)).size;
+		},
+		async delete(key) {
+			const path = objectPath(key);
+			if (existsSync(path)) await unlink(path);
 		},
 	};
 }
@@ -54,47 +74,43 @@ function createS3Adapter(): StorageAdapter {
 	const bucket = process.env.S3_BUCKET;
 	const region = process.env.S3_REGION ?? "us-east-1";
 	const endpoint = process.env.S3_ENDPOINT; // for R2/MinIO
+	const serverSideEncryption = process.env.S3_SERVER_SIDE_ENCRYPTION as
+		| "AES256"
+		| "aws:kms"
+		| undefined;
+	const kmsKeyId = process.env.S3_KMS_KEY_ID;
 	if (!bucket) {
 		throw new Error("STORAGE_DRIVER=s3 requires S3_BUCKET to be set.");
 	}
 
-	// Lazily import so the SDK is only required when S3 is actually used.
-	// Indirect specifier keeps TS/bundler from resolving an optional dep.
-	const sdkSpecifier = "@aws-sdk/client-s3";
-	async function client() {
-		const mod = await import(/* webpackIgnore: true */ sdkSpecifier).catch(
-			() => {
-				throw new Error(
-					"STORAGE_DRIVER=s3 needs @aws-sdk/client-s3 (run: npm i @aws-sdk/client-s3).",
-				);
-			},
-		);
-		return {
-			mod,
-			s3: new mod.S3Client({
-				region,
-				...(endpoint ? { endpoint, forcePathStyle: true } : {}),
-			}),
-		};
-	}
+	const s3 = new S3Client({
+		region,
+		...(endpoint ? { endpoint, forcePathStyle: true } : {}),
+	});
 
 	return {
 		async put(key, body, contentType) {
-			const { mod, s3 } = await client();
 			await s3.send(
-				new mod.PutObjectCommand({
+				new PutObjectCommand({
 					Bucket: bucket,
 					Key: key,
 					Body: body,
 					ContentType: contentType,
+					...(serverSideEncryption
+						? {
+							ServerSideEncryption: serverSideEncryption,
+							...(serverSideEncryption === "aws:kms" && kmsKeyId
+								? { SSEKMSKeyId: kmsKeyId }
+								: {}),
+						}
+						: {}),
 				}),
 			);
 		},
 		async get(key) {
-			const { mod, s3 } = await client();
 			try {
 				const res = await s3.send(
-					new mod.GetObjectCommand({ Bucket: bucket, Key: key }),
+					new GetObjectCommand({ Bucket: bucket, Key: key }),
 				);
 				const bytes = await res.Body?.transformToByteArray();
 				return bytes ? Buffer.from(bytes) : null;
@@ -103,24 +119,25 @@ function createS3Adapter(): StorageAdapter {
 			}
 		},
 		async exists(key) {
-			const { mod, s3 } = await client();
 			try {
-				await s3.send(new mod.HeadObjectCommand({ Bucket: bucket, Key: key }));
+				await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
 				return true;
 			} catch {
 				return false;
 			}
 		},
 		async size(key) {
-			const { mod, s3 } = await client();
 			try {
 				const res = await s3.send(
-					new mod.HeadObjectCommand({ Bucket: bucket, Key: key }),
+					new HeadObjectCommand({ Bucket: bucket, Key: key }),
 				);
 				return typeof res.ContentLength === "number" ? res.ContentLength : null;
 			} catch {
 				return null;
 			}
+		},
+		async delete(key) {
+			await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
 		},
 	};
 }

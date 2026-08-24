@@ -4,6 +4,37 @@ import {
 	computeConfidences,
 	computeResilience,
 } from "./metrics";
+import { explainRiskRule } from "./risk-rules";
+
+function unique(values: string[]): string[] {
+	return [...new Set(values)];
+}
+
+function edgeEvidence(edge: GraphEdge): string[] {
+	const assertionId = edge.attributes?.assertionId;
+	if (typeof assertionId === "string") return [`assertion:${assertionId}`];
+	if (edge.id.startsWith("assertion:")) return [edge.id];
+	return [`edge:${edge.id}`];
+}
+
+function nodeEvidence(node: GraphNode | undefined, predicates?: string[]): string[] {
+	if (!node) return [];
+	const provenance = node.attributes?.provenance;
+	if (provenance && typeof provenance === "object" && !Array.isArray(provenance)) {
+		const record = provenance as { assertionIds?: unknown; predicates?: unknown };
+		if (predicates && record.predicates && typeof record.predicates === "object") {
+			const predicateMap = record.predicates as Record<string, unknown>;
+			const refs = predicates.flatMap((predicate) =>
+				typeof predicateMap[predicate] === "string" ? [`assertion:${predicateMap[predicate]}`] : [],
+			);
+			if (refs.length > 0) return unique(refs);
+		}
+		if (Array.isArray(record.assertionIds)) {
+			return record.assertionIds.flatMap((id) => typeof id === "string" ? [`assertion:${id}`] : []);
+		}
+	}
+	return [`node:${node.id}`];
+}
 
 // --- Risk types ---
 
@@ -22,6 +53,10 @@ export interface DetectedRisk {
 	message: string;
 	confidence: number; // knowledge confidence (0–100), lower = riskier
 	trigger: string; // what triggered this risk
+	ruleId: string;
+	ruleVersion: number;
+	inputFacts: Record<string, string | number | boolean | null>;
+	evidenceRefs: string[];
 }
 
 export interface RiskReport {
@@ -37,9 +72,26 @@ export interface RiskReport {
 
 // --- Risk detectors ---
 
+function explanation(
+	type: DetectedRisk["riskType"],
+	inputFacts: DetectedRisk["inputFacts"],
+	evidenceRefs: string[],
+) {
+	const rule = explainRiskRule(type);
+	if (!rule) throw new Error(`Missing risk rule: ${type}`);
+	return {
+		trigger: rule.condition,
+		ruleId: rule.id,
+		ruleVersion: rule.version,
+		inputFacts,
+		evidenceRefs,
+	};
+}
+
 /**
- * Single point of failure: bus factor 1, critical, and undocumented.
- * Documented knowledge is recoverable even with one expert.
+ * Single point of failure: bus factor 1 and critical. Documentation can reduce
+ * recovery time, but it is not evidence that another person can perform the
+ * work with the required access and competency.
  */
 export function detectSinglePointOfFailure(
 	nodes: GraphNode[],
@@ -54,8 +106,6 @@ export function detectSinglePointOfFailure(
 			if (bf.busFactor !== 1) return false;
 			// Must be critical
 			if (bf.criticality !== "high") return false;
-			// Documented + validated knowledge is recoverable — skip
-			if (bf.documented === true) return false;
 			return true;
 		})
 		.map((bf) => {
@@ -76,7 +126,14 @@ export function detectSinglePointOfFailure(
 				relatedNodeIds: bf.expertIds,
 				message: `"${knowledgeName}" depends entirely on ${expertName}. Bus factor = 1. Confidence = ${conf?.confidence ?? "?"}%.`,
 				confidence: conf?.confidence ?? 0,
-				trigger: `bus_factor=1 AND criticality=high AND confidence<50`,
+				...explanation(
+					"single_point_of_failure",
+					{ busFactor: bf.busFactor, criticality: bf.criticality, documented: bf.documented },
+					unique([
+						...edges.filter((edge) => edge.type === "MASTERS" && edge.toNodeId === bf.knowledgeId).flatMap(edgeEvidence),
+						...nodeEvidence(nodes.find((node) => node.id === bf.knowledgeId), ["CRITICALITY"]),
+					]),
+				),
 			};
 		});
 }
@@ -102,7 +159,11 @@ export function detectBusFactorZero(
 				relatedNodeIds: [],
 				message: `"${bf.knowledgeName}" has ZERO experts at level ≥ 3. Knowledge may be lost.`,
 				confidence: 0,
-				trigger: `bus_factor=0 AND criticality=high`,
+				...explanation(
+					"bus_factor_zero",
+					{ busFactor: bf.busFactor, criticality: bf.criticality },
+					nodeEvidence(nodes.find((node) => node.id === bf.knowledgeId), ["CRITICALITY"]),
+				),
 			};
 		});
 }
@@ -130,7 +191,11 @@ export function detectUndocumentedCritical(
 				relatedNodeIds: [],
 				message: `"${k.name}" is critical but NOT documented. If the expert leaves, there is no written reference.`,
 				confidence: k.confidence ?? 25,
-				trigger: `documented=false AND criticality=high`,
+				...explanation(
+					"undocumented_critical",
+					{ documented: k.documented, criticality: k.criticality ?? null },
+					nodeEvidence(k, ["DOCUMENTED", "CRITICALITY"]),
+				),
 			};
 		});
 }
@@ -160,7 +225,11 @@ export function detectLowResilience(
 					computeConfidences(nodes, edges).find(
 						(c) => c.knowledgeId === r.weakestKnowledgeId,
 					)?.confidence ?? 0,
-				trigger: `process_resilience<=1`,
+				...explanation(
+					"low_resilience",
+					{ processResilience: r.resilienceScore, weakestKnowledgeId: r.weakestKnowledgeId ?? null },
+					edges.filter((edge) => edge.type === "REQUIRES" && edge.fromNodeId === r.processId && edge.toNodeId === r.weakestKnowledgeId).flatMap(edgeEvidence),
+				),
 			};
 		});
 }
@@ -177,9 +246,7 @@ export function detectSinglePointOfContact(
 	const personIds = new Set(
 		nodes.filter((n) => n.type === "Person").map((n) => n.id),
 	);
-	const external = nodes.filter(
-		(n) => n.type === "Client" || n.type === "Supplier",
-	);
+	const external = nodes.filter((n) => n.type === "ExternalParty");
 
 	const risks: DetectedRisk[] = [];
 	for (const ext of external) {
@@ -197,7 +264,7 @@ export function detectSinglePointOfContact(
 		];
 		if (owners.length !== 1) continue;
 		const ownerName = nodes.find((n) => n.id === owners[0])?.name ?? "unknown";
-		const label = ext.type === "Client" ? "Client" : "Supplier";
+		const label = ext.attributes?.subtype === "supplier" ? "Supplier" : "Client";
 		risks.push({
 			id: `risk-spoc-${ext.id}`,
 			riskType: "single_point_of_contact",
@@ -207,7 +274,11 @@ export function detectSinglePointOfContact(
 			relatedNodeIds: owners,
 			message: `${label} "${ext.name}" relies on a single contact: ${ownerName}. No backup for this relationship.`,
 			confidence: 0,
-			trigger: `single owner of ${label.toLowerCase()}`,
+			...explanation(
+				"single_point_of_contact",
+				{ ownerCount: owners.length, criticality: ext.criticality ?? null },
+				edges.filter((edge) => (edge.type === "OWNS" || edge.type === "MANAGES") && edge.toNodeId === ext.id && personIds.has(edge.fromNodeId)).flatMap(edgeEvidence),
+			),
 		});
 	}
 	return risks;

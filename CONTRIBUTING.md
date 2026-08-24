@@ -9,6 +9,8 @@ cd web
 npm ci
 npm run typecheck
 npm test -- --run
+npm run test:e2e
+npm run test:critical
 npm run build
 ```
 

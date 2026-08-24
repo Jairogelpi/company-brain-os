@@ -75,6 +75,7 @@ describe("authConfig callbacks", () => {
 		for (const pathname of [
 			"/login",
 			"/register",
+			"/accept-invite",
 			"/api/graph",
 			"/_next/static/app.js",
 			"/favicon.ico",
@@ -93,5 +94,10 @@ describe("authConfig callbacks", () => {
 				request: { nextUrl: { pathname: "/dashboard" } } as never,
 			}),
 		).toBe(false);
+	});
+
+	it("does not authorize app pages without an active organization", async () => {
+		const authorized = authConfig.callbacks?.authorized;
+		expect(authorized!({ auth: { user: { id: "user-1" } } as never, request: { nextUrl: { pathname: "/dashboard" } } as never })).toBe(false);
 	});
 });

@@ -4,14 +4,14 @@ import { listCompanyUsers } from "@/server/users";
 export type CompanyPerson = {
 	id: string;
 	name: string;
-	source: "graph" | "user";
+	source: "graph";
+	mappedUserId?: string;
 };
 
 /**
- * Combined, de-duplicated list of the company's people: Person nodes already
- * mapped into the graph + app user accounts. Used to populate person pickers in
- * the graph and the interview so people are chosen, not retyped. De-duped by
- * lower-cased name; existing graph nodes win (so picking one reuses its id).
+ * Canonical graph Person nodes, annotated with their explicit app-user mapping.
+ * User IDs are never returned as graph IDs: that old shortcut allowed pickers to
+ * reference nodes that did not exist and made independent review name-based.
  */
 export async function listCompanyPeople(
 	companyId: string,
@@ -22,20 +22,18 @@ export async function listCompanyPeople(
 		listCompanyUsers(companyId),
 	]);
 
-	const byName = new Map<string, CompanyPerson>();
+	const userByPerson = new Map(users
+		.filter((user) => user.personNodeId)
+		.map((user) => [user.personNodeId!, user.id]));
+	const people: CompanyPerson[] = [];
 	for (const n of nodes) {
 		if (n.type !== "Person") continue;
-		byName.set(n.name.trim().toLowerCase(), {
+		people.push({
 			id: n.id,
 			name: n.name,
 			source: "graph",
+			mappedUserId: userByPerson.get(n.id),
 		});
 	}
-	for (const u of users) {
-		const key = u.name.trim().toLowerCase();
-		if (byName.has(key)) continue; // graph node already represents this person
-		byName.set(key, { id: u.id, name: u.name, source: "user" });
-	}
-
-	return [...byName.values()].sort((a, b) => a.name.localeCompare(b.name));
+	return people.sort((a, b) => a.name.localeCompare(b.name));
 }

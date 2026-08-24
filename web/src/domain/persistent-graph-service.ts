@@ -9,12 +9,13 @@ import type { GraphOperationProposal } from "./interview";
 import type { GraphConfirmationDecision } from "./graph-confirmation";
 import { confirmGraphProposals } from "./graph-confirmation";
 import type { GraphRepository } from "@/db/repository";
+import { requireOrganizationId } from "@/auth/organization-context";
 
 // --- Event types (drizzle-compatible) ---
 
 export type PersistentGraphEvent = {
 	id: string;
-	companyId?: string;
+	companyId: string;
 	actorId?: string;
 	eventType:
 		| "graph.node.created"
@@ -69,7 +70,7 @@ export function createPersistentGraphService(
 	options?: PersistentGraphOptions,
 ): PersistentGraphService {
 	const actorId = options?.actorId;
-	const companyId = options?.companyId ?? "default";
+	const companyId = requireOrganizationId(options?.companyId);
 
 	function emit(
 		eventType: PersistentGraphEvent["eventType"],

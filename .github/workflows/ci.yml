@@ -2,7 +2,7 @@ name: Company Brain OS CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, "feat/**"]
   pull_request:
     branches: [main, master]
 
@@ -60,6 +60,17 @@ jobs:
 
       - name: Test
         run: npm test -- --run
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/company_brain_os
+
+      - name: Canonical Pedro / Laura E2E
+        run: npm run test:e2e
+
+      - name: Critical domain coverage
+        run: npm run test:critical
+
+      - name: Test tenant isolation
+        run: npx vitest --config test.integration.config.ts run
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/company_brain_os
 

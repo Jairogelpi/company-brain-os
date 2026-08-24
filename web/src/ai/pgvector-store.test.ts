@@ -73,12 +73,15 @@ function mockDb() {
 		})),
 	}));
 	const deleteFn = vi.fn(() => ({ where: vi.fn(async () => undefined) }));
-	return { execute, insert, delete: deleteFn } as unknown as Parameters<
+	const tx = { execute, insert, delete: deleteFn };
+	const transaction = vi.fn(async (work: (inner: typeof tx) => Promise<unknown>) => work(tx));
+	return { ...tx, transaction } as unknown as Parameters<
 		typeof createPgVectorStore
 	>[0] & {
 		execute: typeof execute;
 		insert: typeof insert;
 		delete: typeof deleteFn;
+		transaction: typeof transaction;
 	};
 }
 
@@ -86,14 +89,14 @@ describe("PgVectorStore — DB-backed path", () => {
 	it("upsert rejects a non-768 vector with an error mentioning 768", async () => {
 		const db = mockDb();
 		const store = createPgVectorStore(db);
-		await expect(store.upsert("n1", vec512())).rejects.toThrow(/768/);
+		await expect(store.upsert("n1", vec512(), undefined, "companyA")).rejects.toThrow(/768/);
 		expect(db.insert).not.toHaveBeenCalled();
 	});
 
 	it("upsert accepts a 768 vector and calls db.insert", async () => {
 		const db = mockDb();
 		const store = createPgVectorStore(db);
-		await store.upsert("n1", vec768());
+		await store.upsert("n1", vec768(), undefined, "companyA");
 		expect(db.insert).toHaveBeenCalled();
 	});
 
@@ -102,8 +105,8 @@ describe("PgVectorStore — DB-backed path", () => {
 		const store = createPgVectorStore(db);
 		await store.search(vec768(), 5, "companyA");
 
-		expect(db.execute).toHaveBeenCalledTimes(1);
-		const sqlText = sqlToString((db.execute.mock.calls[0] as unknown[])[0]);
+		expect(db.execute).toHaveBeenCalledTimes(2);
+		const sqlText = sqlToString((db.execute.mock.calls.at(-1) as unknown[])[0]);
 		// pgvector cosine distance operator
 		expect(sqlText).toContain("<=>");
 		// ORDER BY ... <=> ordering
@@ -117,7 +120,7 @@ describe("PgVectorStore — DB-backed path", () => {
 
 	it("search clamps score into [0,1] and maps rows to SearchResult[]", async () => {
 		const db = mockDb();
-		db.execute.mockResolvedValueOnce({
+		db.execute.mockResolvedValueOnce({ rows: [] }).mockResolvedValueOnce({
 			rows: [
 				{ node_id: "n1", similarity: 0.9, name: "Filler", type: "Knowledge" },
 				{ node_id: "n2", similarity: -0.1, name: "Other", type: "Person" },

@@ -28,6 +28,7 @@ The North Star Metric is **Critical Exposures Mitigated**: a critical exposure o
 5. A document is not a verified transfer. A backup counts only with valid evidence, competency and access where required.
 6. The product measures operational dependency, never employee productivity, loyalty or performance.
 7. The first experience produces an explainable exposure in under ten minutes, never an empty canvas.
+8. Authentication identity and organizational identity are linked explicitly: transfer independence is evaluated with canonical Person IDs, never inferred from display names.
 
 ## Canonical domain
 

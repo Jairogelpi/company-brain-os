@@ -5,6 +5,7 @@ import {
 	detectBusFactorZero,
 	detectUndocumentedCritical,
 	detectLowResilience,
+	detectSinglePointOfContact,
 	detectAllRisks,
 } from "./risk-engine";
 
@@ -71,6 +72,15 @@ describe("Risk Engine", () => {
 
 			expect(risks).toHaveLength(1);
 			expect(risks[0].riskType).toBe("single_point_of_failure");
+			expect(risks[0].trigger).toBe("bus_factor=1 AND criticality=high");
+			expect(risks[0].ruleId).toBe("knowledge-single-point-of-failure");
+			expect(risks[0].ruleVersion).toBe(2);
+			expect(risks[0].inputFacts).toMatchObject({
+			busFactor: 1,
+			criticality: "high",
+			documented: false,
+		});
+			expect(risks[0].evidenceRefs).toContain("edge:e-m-p-f");
 			expect(risks[0].sourceNodeId).toBe(fillerKnowledge.id);
 			expect(risks[0].message).toContain("Pedro");
 		});
@@ -104,6 +114,29 @@ describe("Risk Engine", () => {
 
 			expect(risks).toHaveLength(0);
 		});
+
+		it("keeps the dependency risk open when knowledge is documented but transfer is not verified", () => {
+			const risks = detectSinglePointOfFailure(
+				[pedro, documentedKnowledge],
+				[{ ...masteryPedro, toNodeId: documentedKnowledge.id }],
+			);
+
+			expect(risks).toHaveLength(1);
+			expect(risks[0].inputFacts.documented).toBe(true);
+		});
+
+		it("references canonical assertions when the projection carries provenance", () => {
+			const knowledge = {
+				...fillerKnowledge,
+				attributes: { provenance: { assertionIds: ["type"], predicates: { CRITICALITY: "criticality-a" } } },
+			};
+			const risk = detectSinglePointOfFailure(
+				[pedro, knowledge],
+				[{ ...masteryPedro, attributes: { level: 5, assertionId: "mastery-a" } }],
+			)[0];
+
+			expect(risk.evidenceRefs).toEqual(["assertion:mastery-a", "assertion:criticality-a"]);
+		});
 	});
 
 	describe("detectBusFactorZero", () => {
@@ -116,6 +149,15 @@ describe("Risk Engine", () => {
 			expect(risks).toHaveLength(1);
 			expect(risks[0].riskType).toBe("bus_factor_zero");
 			expect(risks[0].severity).toBe("critical");
+		});
+
+		it("falls back to all canonical node assertions when a predicate map is unavailable", () => {
+			const risk = detectBusFactorZero([{
+				...lostKnowledge,
+				attributes: { provenance: { assertionIds: ["type-a", "criticality-a"] } },
+			}], [])[0];
+
+			expect(risk.evidenceRefs).toEqual(["assertion:type-a", "assertion:criticality-a"]);
 		});
 	});
 
@@ -153,6 +195,44 @@ describe("Risk Engine", () => {
 		});
 	});
 
+	describe("detectSinglePointOfContact", () => {
+		it("detects a sole owner of a critical external party with its evidence", () => {
+			const customer: GraphNode = {
+				id: "client-acme",
+				type: "ExternalParty",
+				name: "ACME",
+				criticality: "high",
+				attributes: { subtype: "client" },
+			};
+			const ownership: GraphEdge = {
+				id: "edge-owner-acme",
+				type: "OWNS",
+				fromNodeId: pedro.id,
+				toNodeId: customer.id,
+			};
+
+			const risks = detectSinglePointOfContact([pedro, customer], [ownership]);
+
+			expect(risks).toHaveLength(1);
+			expect(risks[0]).toMatchObject({
+				riskType: "single_point_of_contact",
+				severity: "critical",
+				ruleId: "external-party-single-contact",
+				evidenceRefs: ["edge:edge-owner-acme"],
+			});
+		});
+
+		it("does not report parties with no owner or a verified second owner", () => {
+			const supplier: GraphNode = { id: "supplier", type: "ExternalParty", name: "Supply", attributes: { subtype: "supplier" } };
+			const backup: GraphEdge = { id: "edge-owner-laura", type: "MANAGES", fromNodeId: laura.id, toNodeId: supplier.id };
+
+			expect(detectSinglePointOfContact([pedro, laura, supplier], [])).toEqual([]);
+			expect(detectSinglePointOfContact([pedro, laura, supplier], [
+				{ ...backup, id: "edge-owner-pedro", type: "OWNS", fromNodeId: pedro.id }, backup,
+			])).toEqual([]);
+		});
+	});
+
 	describe("detectAllRisks", () => {
 		it("produces a unified risk report with summary", () => {
 			const report = detectAllRisks(
@@ -178,7 +258,10 @@ describe("Risk Engine", () => {
 
 			const report = detectAllRisks(
 				[pedro, laura, documentedKnowledge],
-				[secondExpert],
+				[
+					{ ...masteryPedro, id: "e-m-p-doc", toNodeId: documentedKnowledge.id },
+					secondExpert,
+				],
 			);
 
 			expect(report.risks).toHaveLength(0);

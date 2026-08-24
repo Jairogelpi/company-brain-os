@@ -56,6 +56,77 @@ export interface MissionSubmission {
 	reviewedAt?: string;
 }
 
+export type TransferVerificationStatus = "proposed" | "approved" | "rejected";
+
+export interface TransferVerification {
+	id: string;
+	missionId: string;
+	targetNodeId: string;
+	backupPersonId: string;
+	assessorId: string;
+	/** Canonical Person node for the authenticated assessor. */
+	assessorPersonId?: string;
+	competencyLevel: number;
+	accessVerified: boolean;
+	evidenceRefs: string[];
+	status: TransferVerificationStatus;
+	reviewerId?: string;
+	/** Canonical Person node for the authenticated independent reviewer. */
+	reviewerPersonId?: string;
+	rejectionReason?: string;
+	createdAt: string;
+	reviewedAt?: string;
+}
+
+export type TransferVerificationIssue =
+	| "mission_not_validated"
+	| "mission_mismatch"
+	| "missing_backup"
+	| "missing_assessor_mapping"
+	| "missing_reviewer_mapping"
+	| "insufficient_competency"
+	| "access_not_verified"
+	| "missing_evidence"
+	| "self_assessment"
+	| "self_review";
+
+export function transferVerificationIssues(
+	mission: Pick<Mission, "id" | "targetNodeId" | "status">,
+	verification: Pick<
+		TransferVerification,
+		"missionId" | "targetNodeId" | "backupPersonId" | "assessorId" | "assessorPersonId" | "reviewerId" | "reviewerPersonId" | "competencyLevel" | "accessVerified" | "evidenceRefs" | "status"
+	>,
+): TransferVerificationIssue[] {
+	const issues: TransferVerificationIssue[] = [];
+	if (mission.status !== "validated") issues.push("mission_not_validated");
+	if (verification.missionId !== mission.id || verification.targetNodeId !== mission.targetNodeId) {
+		issues.push("mission_mismatch");
+	}
+	if (!verification.backupPersonId.trim()) issues.push("missing_backup");
+	if (!verification.assessorPersonId?.trim()) issues.push("missing_assessor_mapping");
+	if (!Number.isInteger(verification.competencyLevel) || verification.competencyLevel < 3 || verification.competencyLevel > 5) {
+		issues.push("insufficient_competency");
+	}
+	if (!verification.accessVerified) issues.push("access_not_verified");
+	if (verification.evidenceRefs.length === 0 || verification.evidenceRefs.some((ref) => !ref.trim())) {
+		issues.push("missing_evidence");
+	}
+	if (verification.assessorPersonId === verification.backupPersonId) issues.push("self_assessment");
+	if (verification.status === "approved" && !verification.reviewerPersonId?.trim()) {
+		issues.push("missing_reviewer_mapping");
+	}
+	if (
+		verification.reviewerId &&
+		(verification.reviewerId === verification.assessorId ||
+			(Boolean(verification.reviewerPersonId) &&
+				(verification.reviewerPersonId === verification.assessorPersonId ||
+					verification.reviewerPersonId === verification.backupPersonId)))
+	) {
+		issues.push("self_review");
+	}
+	return issues;
+}
+
 export type MediaType =
 	| "audio"
 	| "video"
@@ -98,10 +169,10 @@ export interface Artifact {
 // --- Mission state machine ---
 
 export const VALID_TRANSITIONS: Record<MissionStatus, MissionStatus[]> = {
-	open: ["in_progress", "closed"],
-	in_progress: ["submitted", "closed"],
+	open: ["in_progress"],
+	in_progress: ["submitted"],
 	submitted: ["validated", "in_progress"],
-	validated: ["closed"],
+	validated: [],
 	closed: [],
 };
 
@@ -257,12 +328,19 @@ export function computeMissionStats(missions: Mission[]): MissionStats {
  * Close a loop: mission completed → risk status can be lowered.
  * Returns the updated mission with status "closed".
  */
-export function completeMission(mission: Mission): Mission {
+export function completeMission(
+	mission: Mission,
+	verification: TransferVerification,
+): Mission {
 	if (mission.status === "closed") return mission;
 	if (mission.status !== "validated") {
 		throw new Error(
 			`Cannot close mission in status "${mission.status}". Must be "validated" first.`,
 		);
 	}
-	return transitionMission(mission, "closed");
+	const issues = transferVerificationIssues(mission, verification);
+	if (verification.status !== "approved" || issues.length > 0) {
+		throw new Error(`Cannot close mission without approved verified transfer: ${issues.join(", ") || "verification_not_approved"}`);
+	}
+	return { ...mission, status: "closed", closedAt: new Date().toISOString() };
 }

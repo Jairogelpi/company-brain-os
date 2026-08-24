@@ -1,36 +1,45 @@
-# Company Brain OS web agent rules
+# Company Brain OS web rules
 
-## Stack
+## Product contract
 
-- Next.js App Router with TypeScript.
-- Prefer Server Components by default. Add `"use client"` only at interactive leaves.
-- Use `next/font`; do not add Google Font `<link>` tags.
-- Tailwind CSS is the styling baseline.
-- shadcn/ui components are copied into `src/components/ui`; add only the component needed.
-
-## Product constraints
-
-- The graph is the source of truth. Do not duplicate business graph data in canvas/UI state.
-- Canvas layout belongs in `node_layout` only.
-- Do not add auth, AI calls, missions, or canvas code during F0 unless a task explicitly advances that phase.
-- AI extraction must output typed graph operations for human confirmation; never mutate the graph from raw model text.
+- Follow `docs/product/COMPANY_BRAIN_OS_V4.md`.
+- The immutable assertion/evidence ledger is canonical. `nodes` and `edges` are a rebuildable projection only.
+- AI and imports create proposals. Only an authorized human can approve organizational truth.
+- A document is not verified transfer. Mission closure requires a competent backup, required access, evidence and an independent reviewer.
+- Risks are deterministic, versioned derived records, never graph nodes.
+- Measure continuity dependency, never employee productivity, loyalty or performance.
 
 ## Domain invariants
 
-- Node types are closed: `Person`, `Knowledge`, `Process`, `Asset`, `Unit`, `Risk`.
-- Edge types are closed: `MASTERS`, `LEARNS`, `REQUIRES`, `EXECUTES`, `PRODUCES`, `DEPENDS_ON`, `BELONGS_TO`.
-- Sector-specific detail belongs in attributes, not new node or edge types.
-- `Knowledge` requires `knowledge_type` and `confidence` from 0 to 100.
+- Canonical entities: `Person`, `Knowledge`, `Process`, `Asset`, `OrganizationalUnit`, `ExternalParty`, `Project`, `System`, `Document`.
+- `ExternalParty.attributes.subtype` distinguishes clients and suppliers.
+- Canonical relationships are the closed catalog in `src/domain/graph.ts`.
+- Every projected node and edge must expose assertion provenance.
+- Rejected, expired, superseded and archived assertions never project.
+- No business operation may infer `default` or `demo-corp` as a tenant.
 
-## Data strategy
+## Security invariants
 
-Postgres + Apache AGE is the target. Until AGE support is verified in the chosen provider, relational `nodes` and `edges` are the canonical graph store.
+- Every business query is organization-scoped; RLS context is set inside the same database transaction as the query.
+- Never use the database owner for the production app.
+- Uploads are tenant-partitioned, signature-checked and malware-scanned before storage.
+- Do not log captured content, credentials, raw uploads or sensitive HR data.
+
+## Stack
+
+- Next.js App Router, React, strict TypeScript and Tailwind CSS.
+- Prefer Server Components; use `"use client"` only at interactive leaves.
+- Domain modules must not depend on Next.js.
+- Keep provider integrations behind interfaces.
 
 ## Verification
 
 Before claiming done:
 
 ```bash
+npm run typecheck
 npm test -- --run
+npm run test:e2e
+npm run test:critical
 npm run build
 ```

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireApiUser } from "@/auth/api-guard";
 import { canPerform } from "@/auth/permissions";
 import { createSubmission, readMission } from "@/server/missions";
+import { verifySignedUploadUrl } from "@/lib/upload-security";
 
 /**
  * POST /api/missions/submit — an employee delivers work for a mission.
@@ -53,6 +54,9 @@ export async function POST(request: Request) {
 	}
 	if (kind === "file" && !body.storageUrl) {
 		return NextResponse.json({ error: "Upload a file first." }, { status: 400 });
+	}
+	if (kind === "file" && !verifySignedUploadUrl(user.companyId, body.storageUrl!)) {
+		return NextResponse.json({ error: "Upload link is invalid or expired." }, { status: 400 });
 	}
 
 	const submission = await createSubmission(user.companyId, {

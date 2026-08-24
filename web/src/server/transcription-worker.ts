@@ -45,7 +45,7 @@ async function completeWithTranscript(
 		provider,
 		noSpeech,
 		failReason: null,
-	});
+	}, job.companyId);
 
 	if (noSpeech || text.trim() === "") return;
 
@@ -74,7 +74,7 @@ export async function runTranscriptionWorkerOnce(
 				await store.updateStatus(job.id, "failed", {
 					failReason: "transcription provider unavailable",
 					provider: "unavailable",
-				});
+				}, job.companyId);
 				continue;
 			}
 			await completeWithTranscript(
@@ -87,7 +87,7 @@ export async function runTranscriptionWorkerOnce(
 		} catch (err) {
 			await store.updateStatus(job.id, "failed", {
 				failReason: failureReason(err),
-			});
+			}, job.companyId);
 		}
 	}
 }

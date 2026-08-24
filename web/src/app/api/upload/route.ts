@@ -1,14 +1,21 @@
 import { NextResponse } from "next/server";
-import { randomUUID } from "crypto";
+import { createHash, randomUUID } from "crypto";
 import { requireApiUser } from "@/auth/api-guard";
-import { checkRateLimit } from "@/lib/rate-limiter";
+import { checkDistributedRateLimit } from "@/lib/rate-limiter";
 import { getStorage } from "@/lib/storage";
 import {
 	classifyMediaType,
 	extForMime,
 	isAllowedMime,
 	maxBytesForMime,
+	matchesMimeSignature,
 } from "@/lib/upload-policy";
+import {
+	createSignedUploadUrl,
+	scanUpload,
+	tenantStorageKey,
+} from "@/lib/upload-security";
+import { registerStoredUpload } from "@/server/uploads";
 
 /**
  * POST /api/upload
@@ -22,7 +29,12 @@ export async function POST(request: Request) {
 	if (user instanceof NextResponse) return user;
 
 	// Rate limit uploads per user (10 burst, refill 30/min).
-	const rl = checkRateLimit(`upload:${user.id}`, 30, 10);
+	let rl;
+	try {
+		rl = await checkDistributedRateLimit(`upload:${user.companyId}:${user.id}`, 30, 10);
+	} catch {
+		return NextResponse.json({ error: "Upload service temporarily unavailable" }, { status: 503 });
+	}
 	if (!rl.allowed) {
 		return NextResponse.json(
 			{ error: "Too many uploads. Slow down." },
@@ -59,16 +71,55 @@ export async function POST(request: Request) {
 		const safeName = `${randomUUID()}.${ext}`;
 
 		const buffer = Buffer.from(await file.arrayBuffer());
-		await getStorage().put(safeName, buffer, mimeType);
+		if (!matchesMimeSignature(mimeType, buffer)) {
+			return NextResponse.json({ error: "File content does not match its declared type" }, { status: 415 });
+		}
+		let scan;
+		try {
+			scan = await scanUpload(buffer);
+		} catch {
+			return NextResponse.json({ error: "Malware scanner unavailable" }, { status: 503 });
+		}
+		if (!scan.clean) {
+			return NextResponse.json({ error: "Upload rejected by malware scanner" }, { status: 422 });
+		}
+		const storageKey = tenantStorageKey(user.companyId, safeName);
+		const storage = getStorage();
+		await storage.put(storageKey, buffer, mimeType);
+		const contentSha256 = createHash("sha256").update(buffer).digest("hex");
+		const uploadId = randomUUID();
+		const configuredRetentionDays = Number(process.env.UPLOAD_RETENTION_DAYS) || 365;
+		const retentionDays = Math.max(1, Math.min(configuredRetentionDays, 3650));
+		const retentionUntil = new Date(Date.now() + retentionDays * 86_400_000);
+		try {
+			await registerStoredUpload({
+				id: uploadId,
+				companyId: user.companyId,
+				filename: safeName,
+				originalName: file.name || safeName,
+				mimeType,
+				sizeBytes: file.size,
+				contentSha256,
+				uploadedBy: user.id,
+				scanProvider: scan.provider,
+				retentionUntil,
+			});
+		} catch (error) {
+			await storage.delete(storageKey).catch(() => undefined);
+			throw error;
+		}
 
 		return NextResponse.json({
-			id: randomUUID(),
+			id: uploadId,
 			filename: safeName,
 			originalName: file.name || safeName,
-			storageUrl: `/api/upload/${safeName}`,
+			storageUrl: createSignedUploadUrl(user.companyId, safeName),
 			mediaType: classifyMediaType(mimeType),
 			mimeType,
 			size: file.size,
+			contentSha256,
+			scanProvider: scan.provider,
+			retentionUntil: retentionUntil.toISOString(),
 		});
 	} catch (error) {
 		console.error("Upload error:", error);

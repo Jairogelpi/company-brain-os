@@ -1,11 +1,25 @@
-# Progress — redesign-ui-refero (tasks phase)
+# Product completion status
 
-## 2026-06-21 — SDD tasks phase complete
+## Completed in the R0–R4 foundation
 
-- Read inputs: design.md, spec.md, proposal.md, explore.md, openspec/config.yaml.
-- Wrote `openspec/changes/redesign-ui-refero/tasks.md` organized by 4 chained PRs (PR1 tokens/font/button, PR2 shadcn install + Sidebar/GlobalSearch, PR3a pages part 1, PR3b pages part 2, PR4 hero/login/register/legacy cleanup) + final Verify section.
-- ~46 tasks total. Strict TDD: RED (T1–T6) → GREEN → TRIANGULATE → REFACTOR per PR.
-- Review Workload Forecast: ~1800–2400 lines, High risk, chained PRs recommended, stacked-to-main.
-- Persisted summary to Engram topic_key `sdd/redesign-ui-refero/tasks`.
+- Assertion/evidence ledger is canonical; nodes and edges are a deterministic projection.
+- Legacy graph data has an auditable migration path into unverified assertions.
+- Human graph edits and Inbox approvals use the ledger; AI Build only queues proposals.
+- V4 entity and relationship catalog is implemented.
+- Explainable risks cite rule, version, input facts and canonical assertions.
+- Documentation no longer falsely closes a single-person dependency.
+- Verified transfer requires competency, access, evidence and independent review in domain, API and UI.
+- Pedro/Laura executable E2E proves the complete loop and deterministic rebuild.
+- Protected business tables use RLS, tenant foreign keys and a least-privilege production role.
+- Uploads use tenant partitions, content signatures, hashes, ClamAV and distributed rate limiting.
+- Production has a separate worker and never seeds demo data.
+- Mission assignment has durable in-app notifications plus an email outbox with provider acknowledgement, retry and dead-letter handling.
+- Embeddings, transcription jobs and notifications are tenant-owned and RLS-protected.
+- Sensitive HR/profile data is separated from the global login identity and protected by RLS plus field-level authorization.
+- Owners can onboard real company users through expiring, one-time, hashed invitation tokens with durable email delivery.
+- CI gates migrations, tests, E2E, coverage, tenant isolation, typecheck and build.
+- Product, architecture, security, runbook, portfolio and pilot material align with v4.
 
-Next: SDD apply phase (PR1 first — unblocks all subsequent PRs).
+## Evidence before claims
+
+Repository tests are engineering evidence, not customer outcome evidence. Commercial impact must be established through paid pilots using `docs/commercial/PILOT_OFFER.md`.
