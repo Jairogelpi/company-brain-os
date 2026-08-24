@@ -13,7 +13,8 @@ This directory is the canonical documentation map for the current product. Start
 
 - [Canonical ledger architecture](architecture/CANONICAL_LEDGER.md) — approved assertions/evidence as truth; graph as deterministic projection.
 - [Product contract](product/COMPANY_BRAIN_OS_V4.md) — behavior and domain model that implementation must satisfy.
-- [Repository CI](../.github/workflows/ci.yml) — authoritative repository-controlled release gate.
+- [Repository CI](../.github/workflows/ci.yml) — authoritative repository-controlled release gate, including lint, format policy and Chromium browser journeys.
+- [CodeQL](../.github/workflows/codeql.yml) — repository SAST for JavaScript/TypeScript.
 - [Contributing](../CONTRIBUTING.md) — local verification, PR, security and evidence standards.
 
 The architecture rule to preserve is simple: AI and imports may propose facts, but only governed human review can promote them into canonical truth. Derived graph/risk state must remain rebuildable from approved evidence.
@@ -23,6 +24,7 @@ The architecture rule to preserve is simple: AI and imports may propose facts, b
 - [Security policy](../SECURITY.md) — disclosure process, supported versions and non-negotiable development rules.
 - [SaaS security model](security/SAAS_SECURITY.md) — tenant isolation, authorization, uploads and threat controls.
 - [Release scorecard](RELEASE_SCORECARD.md) — security evidence required by the repository gate versus evidence that requires an independent external party.
+- [CodeQL workflow](../.github/workflows/codeql.yml) — static application-security analysis published through GitHub code scanning.
 
 ## Operators and deployment
 
@@ -38,12 +40,19 @@ Production intentionally differs from demo/local mode: it uses a least-privilege
 - [Pilot offer](commercial/PILOT_OFFER.md) — pilot scope and measurement plan.
 - [One-page offer](commercial/ONE_PAGE.md) — buyer-facing positioning and sales playbook.
 - [Release scorecard](RELEASE_SCORECARD.md) — evidence required before stronger product/company claims are made.
+- [v1.0.0-pilot release notes](releases/v1.0.0-pilot.md) — formal repository release boundary.
 
 Repository tests demonstrate implementation behavior, not customer ROI. Paid-pilot outcomes, legal approval, restore-drill evidence and independent security validation must come from real external work.
 
 ## Historical material
 
-Historical design notes are retained only when they help explain decisions or preserve old links. They are not the current product contract. See [`archive/`](archive/) when historical context is required.
+Historical design notes are retained only when they help explain decisions or preserve old links. They are not the current product contract.
+
+- [`archive/`](archive/) — explicit archived product/progress material.
+- [`superpowers/`](superpowers/) — dated implementation-plan history; non-canonical.
+- [`../openspec/`](../openspec/) — historical proposals and design explorations; non-canonical.
+
+Historical files may intentionally mention superseded framework versions or designs. That is not a contradiction as long as the directory boundary clearly marks them as historical.
 
 ## Source-of-truth hierarchy
 

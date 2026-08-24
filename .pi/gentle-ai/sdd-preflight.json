@@ -1,8 +1,0 @@
-{
-  "executionMode": "auto",
-  "artifactStore": "both",
-  "chainedPrStrategy": "auto-forecast",
-  "reviewBudgetLines": 500,
-  "engramAvailable": true,
-  "prompted": true
-}
