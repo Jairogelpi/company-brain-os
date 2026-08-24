@@ -15,6 +15,61 @@ permissions:
   contents: read
 
 jobs:
+  remediate-dependencies:
+    name: One-shot dependency remediation
+    if: github.event_name == 'push' && github.ref == 'refs/heads/hardening/absolute-10' && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - name: Checkout hardening branch
+        uses: actions/checkout@v7
+        with:
+          ref: hardening/absolute-10
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install exact current graph
+        run: npm ci
+
+      - name: Apply npm security remediations
+        run: npm audit fix --force
+
+      - name: Require clean production audit
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Regression suite
+        run: npm test -- --run
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+        env:
+          AUTH_SECRET: build-time-placeholder-secret-not-used-at-runtime
+
+      - name: Commit generated dependency graph
+        run: |
+          if git diff --quiet -- package.json package-lock.json; then
+            echo "No dependency graph changes generated"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "fix(deps): remediate production vulnerabilities"
+          git push origin HEAD:hardening/absolute-10
+
   test:
     name: Absolute release gate
     runs-on: ubuntu-latest
