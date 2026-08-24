@@ -17,7 +17,7 @@ permissions:
 jobs:
   remediate-dependencies:
     name: One-shot dependency remediation
-    if: github.event_name == 'push' && github.ref == 'refs/heads/hardening/absolute-10' && github.actor != 'github-actions[bot]'
+    if: github.event_name == 'pull_request' && github.head_ref == 'hardening/absolute-10' && github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
