@@ -10,6 +10,7 @@
     "worker": "tsx src/worker.ts",
     "test": "vitest",
     "test:e2e": "vitest run src/domain/canonical-pedro-laura.e2e.test.ts",
+    "test:browser:install": "npx --yes @playwright/test@1.62.1 install chromium",
     "test:browser": "npx --yes @playwright/test@1.62.1 test --config=playwright.config.ts",
     "test:critical": "vitest run --coverage --config vitest.critical.config.ts",
     "lint": "node scripts/lint.mjs",
