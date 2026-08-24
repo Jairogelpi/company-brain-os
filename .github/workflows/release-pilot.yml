@@ -1,0 +1,35 @@
+name: Publish v1.0.0-pilot
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - ".github/workflows/release-pilot.yml"
+      - "docs/releases/v1.0.0-pilot.md"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Tag and publish pilot release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Create release if absent
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view v1.0.0-pilot >/dev/null 2>&1; then
+            echo "v1.0.0-pilot already exists; nothing to do."
+            exit 0
+          fi
+          gh release create v1.0.0-pilot \
+            --target "$GITHUB_SHA" \
+            --title "Company Brain OS v1.0.0-pilot" \
+            --notes-file docs/releases/v1.0.0-pilot.md
