@@ -2,194 +2,33 @@
   "version": "7",
   "dialect": "postgresql",
   "entries": [
-    {
-      "idx": 0,
-      "version": "7",
-      "when": 1781909442873,
-      "tag": "0000_certain_bedlam",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1781914307556,
-      "tag": "0001_breezy_millenium_guard",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1781915183307,
-      "tag": "0002_calm_toad_men",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1781943192167,
-      "tag": "0003_auth_users_companies",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1781997909457,
-      "tag": "0004_ingestion_items",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1781998943369,
-      "tag": "0005_missions",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1782007505843,
-      "tag": "0006_keen_white_tiger",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1782007505845,
-      "tag": "0008_transcription_jobs",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "7",
-      "when": 1782007505846,
-      "tag": "0009_succession_enrichment",
-      "breakpoints": true
-    },
-    {
-      "idx": 10,
-      "version": "7",
-      "when": 1782007505847,
-      "tag": "0010_mission_workflow",
-      "breakpoints": true
-    },
-    {
-      "idx": 11,
-      "version": "7",
-      "when": 1782007505848,
-      "tag": "0011_more_node_types",
-      "breakpoints": true
-    },
-    {
-      "idx": 12,
-      "version": "7",
-      "when": 1782007505849,
-      "tag": "0012_relationships_document",
-      "breakpoints": true
-    },
-    {
-      "idx": 13,
-      "version": "7",
-      "when": 1782671971603,
-      "tag": "0013_user_hr_fields",
-      "breakpoints": true
-    },
-    {
-      "idx": 14,
-      "version": "7",
-      "when": 1785612600000,
-      "tag": "0014_assertion_ledger",
-      "breakpoints": true
-    },
-    {
-      "idx": 15,
-      "version": "7",
-      "when": 1785613500000,
-      "tag": "0015_v4_ontology_and_tenant_defaults",
-      "breakpoints": true
-    },
-    {
-      "idx": 16,
-      "version": "7",
-      "when": 1785614400000,
-      "tag": "0016_assertion_provenance_columns",
-      "breakpoints": true
-    },
-    {
-      "idx": 17,
-      "version": "7",
-      "when": 1785615300000,
-      "tag": "0017_canonicalize_legacy_graph_nodes",
-      "breakpoints": true
-    },
-    {
-      "idx": 18,
-      "version": "7",
-      "when": 1785616200000,
-      "tag": "0018_canonical_ledger_backfill",
-      "breakpoints": true
-    },
-    {
-      "idx": 19,
-      "version": "7",
-      "when": 1785617100000,
-      "tag": "0019_verified_transfer",
-      "breakpoints": true
-    },
-    {
-      "idx": 20,
-      "version": "7",
-      "when": 1785618000000,
-      "tag": "0020_business_tenant_security",
-      "breakpoints": true
-    },
-    {
-      "idx": 21,
-      "version": "7",
-      "when": 1785618900000,
-      "tag": "0021_distributed_rate_limits",
-      "breakpoints": true
-    },
-    {
-      "idx": 22,
-      "version": "7",
-      "when": 1785619800000,
-      "tag": "0022_stored_upload_controls",
-      "breakpoints": true
-    },
-    {
-      "idx": 23,
-      "version": "7",
-      "when": 1785620700000,
-      "tag": "0023_notification_outbox_and_tenant_coverage",
-      "breakpoints": true
-    },
-    {
-      "idx": 24,
-      "version": "7",
-      "when": 1785621600000,
-      "tag": "0024_tenant_user_profiles",
-      "breakpoints": true
-    },
-    {
-      "idx": 25,
-      "version": "7",
-      "when": 1785622500000,
-      "tag": "0025_user_invitations",
-      "breakpoints": true
-    },
-    {
-      "idx": 26,
-      "version": "7",
-      "when": 1785623400000,
-      "tag": "0026_explicit_person_identity",
-      "breakpoints": true
-    },
-    {
-      "idx": 27,
-      "version": "7",
-      "when": 1785624300000,
-      "tag": "0027_pgvector_bootstrap",
-      "breakpoints": true
-    }
+    { "idx": 0, "version": "7", "when": 1781909442873, "tag": "0000_certain_bedlam", "breakpoints": true },
+    { "idx": 1, "version": "7", "when": 1781914307556, "tag": "0001_breezy_millenium_guard", "breakpoints": true },
+    { "idx": 2, "version": "7", "when": 1781915183307, "tag": "0002_calm_toad_men", "breakpoints": true },
+    { "idx": 3, "version": "7", "when": 1781943192167, "tag": "0003_auth_users_companies", "breakpoints": true },
+    { "idx": 4, "version": "7", "when": 1781997909457, "tag": "0004_ingestion_items", "breakpoints": true },
+    { "idx": 5, "version": "7", "when": 1781998943369, "tag": "0005_missions", "breakpoints": true },
+    { "idx": 6, "version": "7", "when": 1782007505843, "tag": "0006_keen_white_tiger", "breakpoints": true },
+    { "idx": 7, "version": "7", "when": 1782007505844, "tag": "0007_rag_qanda_vector", "breakpoints": true },
+    { "idx": 8, "version": "7", "when": 1782007505845, "tag": "0008_transcription_jobs", "breakpoints": true },
+    { "idx": 9, "version": "7", "when": 1782007505846, "tag": "0009_succession_enrichment", "breakpoints": true },
+    { "idx": 10, "version": "7", "when": 1782007505847, "tag": "0010_mission_workflow", "breakpoints": true },
+    { "idx": 11, "version": "7", "when": 1782007505848, "tag": "0011_more_node_types", "breakpoints": true },
+    { "idx": 12, "version": "7", "when": 1782007505849, "tag": "0012_relationships_document", "breakpoints": true },
+    { "idx": 13, "version": "7", "when": 1782671971603, "tag": "0013_user_hr_fields", "breakpoints": true },
+    { "idx": 14, "version": "7", "when": 1785612600000, "tag": "0014_assertion_ledger", "breakpoints": true },
+    { "idx": 15, "version": "7", "when": 1785613500000, "tag": "0015_v4_ontology_and_tenant_defaults", "breakpoints": true },
+    { "idx": 16, "version": "7", "when": 1785614400000, "tag": "0016_assertion_provenance_columns", "breakpoints": true },
+    { "idx": 17, "version": "7", "when": 1785615300000, "tag": "0017_canonicalize_legacy_graph_nodes", "breakpoints": true },
+    { "idx": 18, "version": "7", "when": 1785616200000, "tag": "0018_canonical_ledger_backfill", "breakpoints": true },
+    { "idx": 19, "version": "7", "when": 1785617100000, "tag": "0019_verified_transfer", "breakpoints": true },
+    { "idx": 20, "version": "7", "when": 1785618000000, "tag": "0020_business_tenant_security", "breakpoints": true },
+    { "idx": 21, "version": "7", "when": 1785618900000, "tag": "0021_distributed_rate_limits", "breakpoints": true },
+    { "idx": 22, "version": "7", "when": 1785619800000, "tag": "0022_stored_upload_controls", "breakpoints": true },
+    { "idx": 23, "version": "7", "when": 1785620700000, "tag": "0023_notification_outbox_and_tenant_coverage", "breakpoints": true },
+    { "idx": 24, "version": "7", "when": 1785621600000, "tag": "0024_tenant_user_profiles", "breakpoints": true },
+    { "idx": 25, "version": "7", "when": 1785622500000, "tag": "0025_user_invitations", "breakpoints": true },
+    { "idx": 26, "version": "7", "when": 1785623400000, "tag": "0026_explicit_person_identity", "breakpoints": true },
+    { "idx": 27, "version": "7", "when": 1785624300000, "tag": "0027_pgvector_bootstrap", "breakpoints": true }
   ]
 }
